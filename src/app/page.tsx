@@ -1,6 +1,8 @@
 import { getScoreboard } from '@/lib/mlb';
+import { getProspectWatch } from '@/lib/prospectWatch';
 import type { Game, Level } from '@/lib/types';
 import ScoreCard from '@/components/ScoreCard';
+import ProspectWatch from '@/components/ProspectWatch';
 import { Reveal, Stagger, StaggerItem } from '@/components/motion';
 import { Radio, Trophy, Clock, Layers } from 'lucide-react';
 
@@ -53,7 +55,10 @@ export default async function DashboardPage({
   searchParams: { date?: string };
 }) {
   const date = searchParams.date || easternToday();
-  const { games, isMock } = await getScoreboard(date);
+  const [{ games, isMock }, watch] = await Promise.all([
+    getScoreboard(date),
+    getProspectWatch(date),
+  ]);
 
   const live = games.filter((g) => g.state === 'live').length;
   const finals = games.filter((g) => g.state === 'final').length;
@@ -91,6 +96,14 @@ export default async function DashboardPage({
           </div>
         </div>
       </Reveal>
+
+      {watch.performances.length > 0 && (
+        <Reveal delay={0.08}>
+          <div className="mb-8">
+            <ProspectWatch performances={watch.performances} />
+          </div>
+        </Reveal>
+      )}
 
       {games.length === 0 ? (
         <Reveal delay={0.1}>

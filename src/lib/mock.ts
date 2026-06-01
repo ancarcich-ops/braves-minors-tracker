@@ -4,7 +4,9 @@ import type {
   Mover,
   MoversPayload,
   Prospect,
+  ProspectPerformance,
   ProspectsPayload,
+  ProspectWatch,
   Scoreboard,
   Transaction,
   TransactionsFeed,
@@ -398,4 +400,45 @@ export function mockMovers(): MoversPayload {
 
   const season = process.env.SEASON || String(new Date().getUTCFullYear());
   return { risers, slumpers, windowSize: 15, season, isMock: true };
+}
+
+// ---------------------------------------------------------------------------
+// Prospect Watch mock
+// ---------------------------------------------------------------------------
+
+/** Illustrative "good games" so the dashboard panel renders offline. */
+export function mockProspectWatch(date: string): ProspectWatch {
+  const make = (
+    name: string,
+    level: Level,
+    team: string,
+    opponent: string,
+    line: string,
+  ): ProspectPerformance => {
+    const seed = PROSPECT_SEED.find((s) => s.name === name);
+    return {
+      id: prospectId(name),
+      name,
+      rank: seed?.rank ?? 0,
+      position: seed?.position ?? '',
+      isPitcher: isPitcher(seed?.position ?? ''),
+      level,
+      team,
+      opponent,
+      line,
+      profileUrl: undefined,
+      headshotUrl: undefined,
+      highlightUrl: 'https://www.mlb.com/video',
+      gamedayUrl: 'https://www.mlb.com/scores',
+    };
+  };
+
+  const performances: ProspectPerformance[] = [
+    make('JR Ritchie', 'AAA', 'Gwinnett Stripers', 'Durham Bulls', '6.0 IP, 1 ER, 9 K, 3 H'),
+    make('Tate Southisene', 'Low-A', 'Augusta GreenJackets', 'Charleston RiverDogs', '3-4, HR, 2B, 3 RBI'),
+    make('Didier Fuentes', 'AAA', 'Gwinnett Stripers', 'Durham Bulls', '7.0 IP, 0 ER, 8 K'),
+    make('Isaiah Drake', 'Low-A', 'Augusta GreenJackets', 'Charleston RiverDogs', '2-3, 2B, 2 SB, BB'),
+  ];
+
+  return { date, performances, isMock: true };
 }

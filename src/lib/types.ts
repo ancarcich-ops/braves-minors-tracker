@@ -201,3 +201,34 @@ export interface MoversPayload {
   /** True when the data came from the offline mock instead of the live API. */
   isMock: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Prospect Watch (notable performances in today's games)
+// ---------------------------------------------------------------------------
+
+export interface ProspectPerformance {
+  id: string;
+  name: string;
+  /** Seed Top-30 rank. */
+  rank: number;
+  position: string;
+  isPitcher: boolean;
+  level: Level | string;
+  team: string;
+  opponent?: string;
+  /** Compact game line, e.g. "3-4, HR, 2B, 3 RBI" or "6.0 IP, 1 ER, 8 K". */
+  line: string;
+  profileUrl?: string;
+  headshotUrl?: string;
+  /** Direct video/recap link when one is available. */
+  highlightUrl?: string;
+  /** Always-available fallback link to the game. */
+  gamedayUrl: string;
+}
+
+export interface ProspectWatch {
+  date: string; // YYYY-MM-DD
+  performances: ProspectPerformance[];
+  /** True when the data came from the offline mock instead of the live API. */
+  isMock: boolean;
+}

@@ -11,9 +11,10 @@ scores, prospects, risers/slumpers, and transactions across every affiliate.
 | Feature | State |
 | --- | --- |
 | Daily scores across all affiliates | ✅ v1 |
+| Prospect Watch (good games today, on the dashboard) | ✅ v1 |
 | Prospects (seeded Top-30, editable) | ✅ v1 |
 | Transactions feed | ✅ v1 |
-| Risers & Slumpers (trend engine) | 🔜 needs nightly snapshots |
+| Risers & Slumpers (game-log trend engine) | ✅ v1 |
 
 ## Stack
 
@@ -60,6 +61,21 @@ leave it unset — the app fetches live and only falls back to mock on error.
   every affiliate over a trailing 30-day window, de-duplicated and sorted
   newest-first, then bucketed (promotion / option / IL / signing / release /
   trade) for color-coding.
+- **Risers & Slumpers** is computed live from each tracked prospect's
+  game-by-game logs (`stats=gameLog`) — recent last-15 form vs. season rates,
+  hitters on OPS and pitchers on ERA, with min-sample filters. No stored
+  history required (so it works without a database).
+- **Prospect Watch** on the dashboard scans today's affiliate boxscores, flags
+  tracked Top-30 prospects who had a notable game (with their rank + line), and
+  links to a player-keyed video highlight from `/game/{pk}/content` when one
+  exists, falling back to the game's Gameday page.
+
+## Look & feel
+
+Glassmorphic dark UI on the Braves palette (navy / red / gold) with a dynamic,
+slowly-crossfading animated background (`BackgroundFX`), Framer Motion reveals,
+a sticky icon nav (labels collapse to icons on small screens), and Geist type.
+Honors `prefers-reduced-motion`.
 
 ## Deploy
 
