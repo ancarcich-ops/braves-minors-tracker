@@ -13,7 +13,7 @@ const BASE = 'https://statsapi.mlb.com/api/v1';
 const useMock = () => process.env.USE_MOCK_DATA === '1';
 const season = () => process.env.SEASON || String(new Date().getUTCFullYear());
 
-function headshotUrl(id: number): string {
+export function headshotUrl(id: number): string {
   return (
     'https://img.mlbstatic.com/mlb-photos/image/upload/' +
     'd_people:generic:headshot:67:current.png/w_240,q_auto:best/' +
@@ -28,7 +28,7 @@ async function getJSON<T>(url: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
-interface RosterEntry {
+export interface RosterEntry {
   id: number;
   position: string;
   age?: number;
@@ -37,7 +37,7 @@ interface RosterEntry {
 }
 
 /** Build a name -> {id, level, team, ...} index across every Braves affiliate. */
-async function buildRosterIndex(yr: string): Promise<Map<string, RosterEntry>> {
+export async function buildRosterIndex(yr: string): Promise<Map<string, RosterEntry>> {
   const affiliates = await getAffiliates();
   const index = new Map<string, RosterEntry>();
   await Promise.all(

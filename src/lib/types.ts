@@ -154,3 +154,50 @@ export interface TransactionsFeed {
   /** True when the data came from the offline mock instead of the live API. */
   isMock: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Risers & Slumpers
+// ---------------------------------------------------------------------------
+
+export type MoverDirection = 'riser' | 'slumper';
+
+/**
+ * A tracked player whose recent stretch diverges from their season baseline.
+ * Computed from game-by-game logs (no stored history needed).
+ */
+export interface Mover {
+  id: string;
+  name: string;
+  position: string;
+  isPitcher: boolean;
+  level?: Level | string;
+  team?: string;
+  mlbamId?: number;
+  headshotUrl?: string;
+  profileUrl?: string;
+  direction: MoverDirection;
+  /** Number of games in the recent window actually used. */
+  window: number;
+  /** Headline metric we trend on: 'OPS' for hitters, 'ERA' for pitchers. */
+  metricLabel: string;
+  recentMetric: string;
+  seasonMetric: string;
+  /** Signed, formatted delta of the headline metric (recent vs season). */
+  delta: string;
+  /** Unitless, direction-aware trend score; positive = hot, negative = cold. */
+  score: number;
+  /** Compact slash/rate line for the recent window. */
+  recentLine: string;
+  /** Compact slash/rate line for the season. */
+  seasonLine: string;
+}
+
+export interface MoversPayload {
+  risers: Mover[];
+  slumpers: Mover[];
+  /** Size of the rolling recent window, in games. */
+  windowSize: number;
+  season: string;
+  /** True when the data came from the offline mock instead of the live API. */
+  isMock: boolean;
+}

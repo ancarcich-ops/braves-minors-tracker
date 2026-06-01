@@ -1,6 +1,8 @@
 import type {
   Game,
   Level,
+  Mover,
+  MoversPayload,
   Prospect,
   ProspectsPayload,
   Scoreboard,
@@ -306,4 +308,94 @@ export function mockTransactions(startDate: string, endDate: string): Transactio
   }));
 
   return { startDate, endDate, transactions, isMock: true };
+}
+
+// ---------------------------------------------------------------------------
+// Risers & Slumpers mock
+// ---------------------------------------------------------------------------
+
+const seedByName = new Map(PROSPECT_SEED.map((s) => [s.name, s]));
+
+function mover(
+  name: string,
+  level: Level,
+  team: string,
+  direction: 'riser' | 'slumper',
+  data:
+    | { kind: 'hit'; recent: string; season: string; recentSlash: string; seasonSlash: string; hr: number }
+    | { kind: 'pitch'; recent: string; season: string; recentLine: string; seasonLine: string },
+): Mover {
+  const seed = seedByName.get(name);
+  const pitcher = data.kind === 'pitch';
+  const r = parseFloat(data.recent);
+  const s = parseFloat(data.season);
+  const rawDiff = pitcher ? s - r : r - s;
+  const score = pitcher ? rawDiff / 1.5 : rawDiff / 0.15;
+  const up = direction === 'riser';
+  const delta = pitcher
+    ? `${up ? '−' : '+'}${Math.abs(s - r).toFixed(2)}`
+    : `${up ? '+' : '−'}${Math.abs(r - s).toFixed(3).replace(/^0/, '')}`;
+
+  return {
+    id: prospectId(name),
+    name,
+    position: seed?.position ?? (pitcher ? 'RHP' : 'OF'),
+    isPitcher: pitcher,
+    level,
+    team,
+    mlbamId: undefined,
+    headshotUrl: undefined,
+    profileUrl: undefined,
+    direction,
+    window: 15,
+    metricLabel: pitcher ? 'ERA' : 'OPS',
+    recentMetric: data.recent,
+    seasonMetric: data.season,
+    delta,
+    score: up ? Math.abs(score) : -Math.abs(score),
+    recentLine: data.kind === 'hit' ? `${data.recentSlash} · ${data.hr} HR` : data.recentLine,
+    seasonLine: data.kind === 'hit' ? data.seasonSlash : data.seasonLine,
+  };
+}
+
+/** Illustrative hot/cold trends so the page renders offline. Not real results. */
+export function mockMovers(): MoversPayload {
+  const risers: Mover[] = [
+    mover('Tate Southisene', 'Low-A', 'Augusta GreenJackets', 'riser', {
+      kind: 'hit', recent: '.985', season: '.812', recentSlash: '.345/.420/.565', seasonSlash: '.281/.360/.452', hr: 5,
+    }),
+    mover('Didier Fuentes', 'AAA', 'Gwinnett Stripers', 'riser', {
+      kind: 'pitch', recent: '1.98', season: '3.64', recentLine: '1.98 ERA · 0.92 WHIP · 31 K / 27.1 IP', seasonLine: '3.64 ERA · 1.21 WHIP',
+    }),
+    mover('Isaiah Drake', 'Low-A', 'Augusta GreenJackets', 'riser', {
+      kind: 'hit', recent: '.910', season: '.735', recentSlash: '.318/.405/.505', seasonSlash: '.252/.340/.395', hr: 3,
+    }),
+    mover('Owen Murphy', 'AA', 'Columbus Clingstones', 'riser', {
+      kind: 'pitch', recent: '2.25', season: '3.50', recentLine: '2.25 ERA · 1.00 WHIP · 34 K / 24.0 IP', seasonLine: '3.50 ERA · 1.18 WHIP',
+    }),
+    mover('John Gil', 'High-A', 'Rome Emperors', 'riser', {
+      kind: 'hit', recent: '.870', season: '.700', recentSlash: '.305/.385/.485', seasonSlash: '.245/.320/.380', hr: 2,
+    }),
+  ];
+
+  const slumpers: Mover[] = [
+    mover('Alex Lodise', 'Low-A', 'Augusta GreenJackets', 'slumper', {
+      kind: 'hit', recent: '.580', season: '.780', recentSlash: '.198/.270/.310', seasonSlash: '.275/.350/.430', hr: 1,
+    }),
+    mover('Garrett Baumann', 'High-A', 'Rome Emperors', 'slumper', {
+      kind: 'pitch', recent: '6.10', season: '3.90', recentLine: '6.10 ERA · 1.62 WHIP · 18 K / 20.2 IP', seasonLine: '3.90 ERA · 1.25 WHIP',
+    }),
+    mover('Diego Tornes', 'Low-A', 'Augusta GreenJackets', 'slumper', {
+      kind: 'hit', recent: '.610', season: '.760', recentSlash: '.205/.290/.320', seasonSlash: '.268/.345/.415', hr: 1,
+    }),
+    mover('Cade Kuehler', 'AA', 'Columbus Clingstones', 'slumper', {
+      kind: 'pitch', recent: '5.85', season: '4.05', recentLine: '5.85 ERA · 1.55 WHIP · 16 K / 20.0 IP', seasonLine: '4.05 ERA · 1.28 WHIP',
+    }),
+  ];
+
+  risers.sort((a, b) => b.score - a.score);
+  slumpers.sort((a, b) => a.score - b.score);
+
+  const season = process.env.SEASON || String(new Date().getUTCFullYear());
+  return { risers, slumpers, windowSize: 15, season, isMock: true };
 }
