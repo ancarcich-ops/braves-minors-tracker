@@ -37,3 +37,81 @@ export interface Scoreboard {
   /** True when the data came from the offline mock instead of the live API. */
   isMock: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Prospects
+// ---------------------------------------------------------------------------
+
+/**
+ * A hand-maintained Top-30 entry. This is the *seed*: rank + scouting bio that
+ * the app ships with and that users can re-rank. Live data (ids, level, stats)
+ * is layered on top at request time.
+ */
+export interface ProspectSeed {
+  rank: number;
+  name: string;
+  /** Primary position abbreviation, e.g. 'SS', 'OF', 'RHP', 'LHP', 'C'. */
+  position: string;
+  bats?: string; // 'L' | 'R' | 'S'
+  throws?: string; // 'L' | 'R'
+  age?: number;
+  /** Expected MLB arrival, e.g. '2027'. */
+  eta?: string;
+  /** Seeded current level; refined from the live roster when available. */
+  level?: Level | string;
+  /** MLB Stats API person id, when known. Otherwise resolved by name. */
+  mlbamId?: number;
+  /** One-line scouting note. */
+  note?: string;
+}
+
+export interface HittingStats {
+  games: number;
+  avg: string;
+  obp: string;
+  slg: string;
+  ops: string;
+  hr: number;
+  rbi: number;
+  sb: number;
+}
+
+export interface PitchingStats {
+  games: number;
+  w: number;
+  l: number;
+  era: string;
+  whip: string;
+  ip: string;
+  so: number;
+  bb: number;
+}
+
+/** A seed enriched with live identity + season stats (or mock equivalents). */
+export interface Prospect {
+  /** Stable slug used as a React key and for persisted re-ordering. */
+  id: string;
+  rank: number;
+  name: string;
+  position: string;
+  isPitcher: boolean;
+  bats?: string;
+  throws?: string;
+  age?: number;
+  eta?: string;
+  level?: Level | string;
+  team?: string;
+  mlbamId?: number;
+  headshotUrl?: string;
+  profileUrl?: string;
+  note?: string;
+  hitting: HittingStats | null;
+  pitching: PitchingStats | null;
+}
+
+export interface ProspectsPayload {
+  prospects: Prospect[];
+  season: string;
+  /** True when stats/identity came from the offline mock instead of the API. */
+  isMock: boolean;
+}

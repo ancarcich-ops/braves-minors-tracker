@@ -11,7 +11,7 @@ scores, prospects, risers/slumpers, and transactions across every affiliate.
 | Feature | State |
 | --- | --- |
 | Daily scores across all affiliates | ✅ v1 |
-| Prospects (seeded Top-30, editable) | 🔜 next |
+| Prospects (seeded Top-30, editable) | ✅ v1 |
 | Risers & Slumpers (trend engine) | 🔜 needs nightly snapshots |
 | Transactions feed | 🔜 next |
 
@@ -50,6 +50,12 @@ leave it unset — the app fetches live and only falls back to mock on error.
   picked up automatically.
 - **Scores** come from `/schedule` hydrated with `linescore`, filtered to the
   Braves' affiliate team ids.
+- **Prospects** start from a seeded Top-30 (`src/lib/prospectSeed.ts`,
+  reconstructed from MLB Pipeline's 2026 list and easy to replace). At request
+  time each player is matched against the live affiliate rosters to resolve an
+  MLB id, current level, and headshot, then their season line is pulled from
+  `/people/{id}/stats`. Re-rankings are saved per-browser (localStorage);
+  DB-backed persistence is a later milestone.
 
 ## Deploy
 
