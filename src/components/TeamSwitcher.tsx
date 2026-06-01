@@ -3,11 +3,13 @@
 import { useRouter } from 'next/navigation';
 import { useTransition } from 'react';
 import { ChevronDown } from 'lucide-react';
-import { TEAMS } from '@/lib/teams';
+import { TEAMS, getTeamBySlug } from '@/lib/teams';
+import TeamLogo from './TeamLogo';
 
 export default function TeamSwitcher({ current }: { current: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
+  const team = getTeamBySlug(current);
 
   function onChange(e: React.ChangeEvent<HTMLSelectElement>) {
     const slug = e.target.value;
@@ -17,14 +19,15 @@ export default function TeamSwitcher({ current }: { current: string }) {
   }
 
   return (
-    <label className="relative flex items-center">
+    <label className="relative flex items-center gap-1.5 rounded-lg border border-braves-gold/30 bg-white/5 pl-1.5 transition-colors hover:bg-white/10">
       <span className="sr-only">Choose team</span>
+      <TeamLogo teamId={team.id} name={team.name} size={20} className="shrink-0" />
       <select
         value={current}
         onChange={onChange}
         disabled={pending}
         aria-label="Choose team"
-        className="appearance-none rounded-lg border border-braves-gold/30 bg-white/5 py-1.5 pl-2.5 pr-7 text-xs font-semibold text-white outline-none transition-colors hover:bg-white/10 focus:ring-2 focus:ring-braves-gold/40 disabled:opacity-50 sm:text-sm"
+        className="appearance-none bg-transparent py-1.5 pl-0.5 pr-7 text-xs font-semibold text-white outline-none focus:ring-0 disabled:opacity-50 sm:text-sm"
       >
         {TEAMS.map((t) => (
           <option key={t.slug} value={t.slug} className="bg-ink-900 text-white">

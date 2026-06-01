@@ -10,10 +10,10 @@ const DEFAULT_TEAM = getTeamBySlug('braves');
 
 const useMock = () => process.env.USE_MOCK_DATA === '1';
 
-/** Today's date (YYYY-MM-DD) in US Eastern, where the Braves system plays. */
-export function easternToday(): string {
+/** Today's date (YYYY-MM-DD) in US Pacific. */
+export function pacificToday(): string {
   return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/New_York',
+    timeZone: 'America/Los_Angeles',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -78,7 +78,7 @@ export async function getTransactions(
   days = 30,
   team: Team = DEFAULT_TEAM,
 ): Promise<TransactionsFeed> {
-  const endDate = easternToday();
+  const endDate = pacificToday();
   const startDate = daysBefore(endDate, days);
 
   if (useMock()) return mockTransactions(startDate, endDate);

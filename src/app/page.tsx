@@ -11,9 +11,9 @@ export const revalidate = 60;
 
 const LEVEL_ORDER: Level[] = ['AAA', 'AA', 'High-A', 'Low-A', 'Rookie', 'DSL'];
 
-function easternToday(): string {
+function pacificToday(): string {
   return new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'America/New_York',
+    timeZone: 'America/Los_Angeles',
     year: 'numeric',
     month: '2-digit',
     day: '2-digit',
@@ -56,7 +56,7 @@ export default async function DashboardPage({
   searchParams: { date?: string };
 }) {
   const team = getSelectedTeam();
-  const date = searchParams.date || easternToday();
+  const date = searchParams.date || pacificToday();
   const [{ games, isMock }, watch] = await Promise.all([
     getScoreboard(date, team.id),
     getProspectWatch(date, team),

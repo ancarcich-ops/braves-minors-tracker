@@ -3,6 +3,8 @@ import { getTop100 } from '@/lib/top100';
 import type { Top100Prospect } from '@/lib/types';
 import { Reveal, Stagger, StaggerItem } from '@/components/motion';
 import { Trophy } from 'lucide-react';
+import TeamLogo from '@/components/TeamLogo';
+import { getTeamBySlug } from '@/lib/teams';
 
 export const revalidate = 900;
 
@@ -74,7 +76,8 @@ function Row({ p }: { p: Top100Prospect }) {
           ) : (
             <span className="truncate font-semibold text-white">{p.name}</span>
           )}
-          <span className="rounded-md bg-white/5 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-300 ring-1 ring-white/10">
+          <span className="inline-flex items-center gap-1 rounded-md bg-white/5 px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-slate-300 ring-1 ring-white/10">
+            <TeamLogo teamId={getTeamBySlug(p.teamSlug).id} name={p.teamShort} size={14} />
             {p.teamShort}
           </span>
           <span className="text-xs text-slate-500">{p.position}</span>
