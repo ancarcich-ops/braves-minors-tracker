@@ -6,13 +6,13 @@ import type { Prospect } from '@/lib/types';
 
 const STORAGE_KEY = 'braves-prospect-order-v1';
 
-const LEVEL_BADGE: Record<string, string> = {
-  AAA: 'bg-braves-red',
-  AA: 'bg-orange-600',
-  'High-A': 'bg-amber-600',
-  'Low-A': 'bg-emerald-700',
-  Rookie: 'bg-sky-700',
-  DSL: 'bg-indigo-700',
+const LEVEL_STYLE: Record<string, string> = {
+  AAA: 'bg-braves-red/15 text-red-300 ring-braves-red/30',
+  AA: 'bg-orange-500/15 text-orange-300 ring-orange-500/30',
+  'High-A': 'bg-amber-500/15 text-amber-300 ring-amber-500/30',
+  'Low-A': 'bg-emerald-500/15 text-emerald-300 ring-emerald-500/30',
+  Rookie: 'bg-sky-500/15 text-sky-300 ring-sky-500/30',
+  DSL: 'bg-indigo-500/15 text-indigo-300 ring-indigo-500/30',
 };
 
 function initials(name: string): string {
@@ -87,7 +87,7 @@ function Row({
   onMove: (dir: -1 | 1) => void;
 }) {
   return (
-    <li className="flex items-center gap-3 rounded-xl border border-white/10 bg-white/[0.03] p-3">
+    <li className="glass glass-hover flex items-center gap-3 rounded-2xl p-3 shadow-card">
       <div className="flex w-8 shrink-0 flex-col items-center">
         <span className="text-lg font-bold tabular-nums text-white/90">{displayRank}</span>
         {displayRank !== p.rank && (
@@ -111,8 +111,8 @@ function Row({
         <div className="flex items-center gap-2">
           {p.level && (
             <span
-              className={`rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wide text-white ${
-                LEVEL_BADGE[p.level] ?? 'bg-slate-600'
+              className={`rounded-md px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider ring-1 ${
+                LEVEL_STYLE[p.level] ?? 'bg-slate-500/15 text-slate-300 ring-slate-500/30'
               }`}
             >
               {p.level}
@@ -123,7 +123,7 @@ function Row({
               href={p.profileUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="truncate font-semibold text-white hover:text-braves-sand"
+              className="truncate font-semibold text-white hover:text-braves-gold"
             >
               {p.name}
             </a>

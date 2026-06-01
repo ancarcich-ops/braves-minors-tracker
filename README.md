@@ -12,8 +12,8 @@ scores, prospects, risers/slumpers, and transactions across every affiliate.
 | --- | --- |
 | Daily scores across all affiliates | ✅ v1 |
 | Prospects (seeded Top-30, editable) | ✅ v1 |
+| Transactions feed | ✅ v1 |
 | Risers & Slumpers (trend engine) | 🔜 needs nightly snapshots |
-| Transactions feed | 🔜 next |
 
 ## Stack
 
@@ -56,6 +56,10 @@ leave it unset — the app fetches live and only falls back to mock on error.
   MLB id, current level, and headshot, then their season line is pulled from
   `/people/{id}/stats`. Re-rankings are saved per-browser (localStorage);
   DB-backed persistence is a later milestone.
+- **Transactions** come from `/transactions` for the parent club (id 144) plus
+  every affiliate over a trailing 30-day window, de-duplicated and sorted
+  newest-first, then bucketed (promotion / option / IL / signing / release /
+  trade) for color-coding.
 
 ## Deploy
 

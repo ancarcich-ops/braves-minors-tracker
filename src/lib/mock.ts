@@ -1,4 +1,12 @@
-import type { Game, Level, Prospect, ProspectsPayload, Scoreboard } from './types';
+import type {
+  Game,
+  Level,
+  Prospect,
+  ProspectsPayload,
+  Scoreboard,
+  Transaction,
+  TransactionsFeed,
+} from './types';
 import { PROSPECT_SEED, isPitcher, prospectId } from './prospectSeed';
 
 // Offline / fallback dataset. Lets the UI render in network-restricted
@@ -172,4 +180,130 @@ export function mockProspects(): ProspectsPayload {
   });
 
   return { prospects, season, isMock: true };
+}
+
+// ---------------------------------------------------------------------------
+// Transactions mock
+// ---------------------------------------------------------------------------
+
+/** Illustrative roster moves so the feed renders offline. Not real moves. */
+export function mockTransactions(startDate: string, endDate: string): TransactionsFeed {
+  // Space a handful of moves across the window, newest first.
+  const day = (back: number) => {
+    const d = new Date(`${endDate}T12:00:00Z`);
+    d.setUTCDate(d.getUTCDate() - back);
+    return d.toISOString().slice(0, 10);
+  };
+
+  const raw: Array<Omit<Transaction, 'id'>> = [
+    {
+      date: day(1),
+      player: 'Didier Fuentes',
+      typeCode: 'RCL',
+      typeDesc: 'Recalled',
+      description: 'Atlanta Braves recalled RHP Didier Fuentes from Gwinnett Stripers.',
+      fromTeam: 'Gwinnett Stripers',
+      toTeam: 'Atlanta Braves',
+      category: 'promotion',
+    },
+    {
+      date: day(2),
+      player: 'JR Ritchie',
+      typeCode: 'ASG',
+      typeDesc: 'Assigned',
+      description: 'RHP JR Ritchie assigned to Gwinnett Stripers from Columbus Clingstones.',
+      fromTeam: 'Columbus Clingstones',
+      toTeam: 'Gwinnett Stripers',
+      category: 'promotion',
+    },
+    {
+      date: day(4),
+      player: 'Owen Murphy',
+      typeCode: 'SC',
+      typeDesc: 'Status Change',
+      description: 'Columbus Clingstones activated RHP Owen Murphy from the 7-day injured list.',
+      fromTeam: undefined,
+      toTeam: 'Columbus Clingstones',
+      category: 'activation',
+    },
+    {
+      date: day(6),
+      player: 'Cam Caminiti',
+      typeCode: 'SC',
+      typeDesc: 'Status Change',
+      description: 'Rome Emperors placed LHP Cam Caminiti on the 7-day injured list.',
+      fromTeam: 'Rome Emperors',
+      toTeam: undefined,
+      category: 'injury',
+    },
+    {
+      date: day(9),
+      player: 'Garrett Baumann',
+      typeCode: 'ASG',
+      typeDesc: 'Assigned',
+      description: 'RHP Garrett Baumann assigned to Columbus Clingstones from Rome Emperors.',
+      fromTeam: 'Rome Emperors',
+      toTeam: 'Columbus Clingstones',
+      category: 'promotion',
+    },
+    {
+      date: day(12),
+      player: 'Tate Southisene',
+      typeCode: 'ASG',
+      typeDesc: 'Assigned',
+      description: 'SS Tate Southisene assigned to Rome Emperors from Augusta GreenJackets.',
+      fromTeam: 'Augusta GreenJackets',
+      toTeam: 'Rome Emperors',
+      category: 'promotion',
+    },
+    {
+      date: day(15),
+      player: 'Hayden Harris',
+      typeCode: 'OPT',
+      typeDesc: 'Optioned',
+      description: 'Atlanta Braves optioned LHP Hayden Harris to Gwinnett Stripers.',
+      fromTeam: 'Atlanta Braves',
+      toTeam: 'Gwinnett Stripers',
+      category: 'demotion',
+    },
+    {
+      date: day(18),
+      player: 'Diego Tornes',
+      typeCode: 'SFA',
+      typeDesc: 'Signed',
+      description: 'Augusta GreenJackets signed OF Diego Tornes.',
+      fromTeam: undefined,
+      toTeam: 'Augusta GreenJackets',
+      category: 'signing',
+    },
+    {
+      date: day(22),
+      player: 'Jhancarlos Lara',
+      typeCode: 'SC',
+      typeDesc: 'Status Change',
+      description: 'Columbus Clingstones placed RHP Jhancarlos Lara on the 60-day injured list.',
+      fromTeam: 'Columbus Clingstones',
+      toTeam: undefined,
+      category: 'injury',
+    },
+    {
+      date: day(27),
+      player: 'Carlos Rodriguez',
+      typeCode: 'REL',
+      typeDesc: 'Released',
+      description: 'Augusta GreenJackets released C Carlos Rodriguez.',
+      fromTeam: 'Augusta GreenJackets',
+      toTeam: undefined,
+      category: 'release',
+    },
+  ];
+
+  const transactions: Transaction[] = raw.map((t, i) => ({
+    id: `mock-${i}`,
+    profileUrl: undefined,
+    playerId: undefined,
+    ...t,
+  }));
+
+  return { startDate, endDate, transactions, isMock: true };
 }

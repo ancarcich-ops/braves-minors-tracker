@@ -115,3 +115,42 @@ export interface ProspectsPayload {
   /** True when stats/identity came from the offline mock instead of the API. */
   isMock: boolean;
 }
+
+// ---------------------------------------------------------------------------
+// Transactions
+// ---------------------------------------------------------------------------
+
+/** Normalized buckets we color-code the feed by. */
+export type TransactionCategory =
+  | 'promotion'
+  | 'demotion'
+  | 'injury'
+  | 'activation'
+  | 'signing'
+  | 'release'
+  | 'trade'
+  | 'other';
+
+export interface Transaction {
+  id: string;
+  /** Effective date, YYYY-MM-DD. */
+  date: string;
+  player: string;
+  playerId?: number;
+  profileUrl?: string;
+  /** MLB Stats API type code, e.g. 'OPT', 'RCL', 'SC'. */
+  typeCode: string;
+  typeDesc: string;
+  description: string;
+  fromTeam?: string;
+  toTeam?: string;
+  category: TransactionCategory;
+}
+
+export interface TransactionsFeed {
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  transactions: Transaction[];
+  /** True when the data came from the offline mock instead of the live API. */
+  isMock: boolean;
+}
