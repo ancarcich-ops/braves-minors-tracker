@@ -1,4 +1,6 @@
+import Image from 'next/image';
 import { getMovers } from '@/lib/movers';
+import { getSelectedTeam } from '@/lib/team-server';
 import type { Mover } from '@/lib/types';
 import { Reveal, Stagger, StaggerItem } from '@/components/motion';
 import { TrendingUp, TrendingDown, Flame, Snowflake } from 'lucide-react';
@@ -30,8 +32,12 @@ function MoverCard({ m }: { m: Mover }) {
   return (
     <li className="glass glass-hover rounded-2xl p-3.5 shadow-card">
       <div className="flex items-center gap-3">
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-braves-navy text-xs font-bold text-white/80 ring-1 ring-white/10">
-          {initials(m.name)}
+        <span className="relative flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-braves-navy text-xs font-bold text-white/80 ring-1 ring-white/10">
+          {m.headshotUrl ? (
+            <Image src={m.headshotUrl} alt="" fill sizes="44px" className="object-cover" unoptimized />
+          ) : (
+            initials(m.name)
+          )}
         </span>
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2">
@@ -117,7 +123,8 @@ function Column({
 }
 
 export default async function MoversPage() {
-  const { risers, slumpers, windowSize, isMock } = await getMovers();
+  const team = getSelectedTeam();
+  const { risers, slumpers, windowSize, isMock } = await getMovers(team);
 
   return (
     <div>
@@ -125,7 +132,7 @@ export default async function MoversPage() {
         <div className="mb-6">
           <div className="mb-1 flex items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-braves-red">
-              Trends
+              {team.short} · Trends
             </span>
             {isMock && (
               <span className="rounded-full bg-braves-gold/15 px-2 py-0.5 text-[10px] font-semibold text-braves-gold ring-1 ring-braves-gold/30">

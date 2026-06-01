@@ -1,7 +1,8 @@
-# Braves Minors Tracker
+# Farm System — MLB Minor-League Tracker
 
-A daily-updating dashboard for the **Atlanta Braves minor-league system** —
-scores, prospects, risers/slumpers, and transactions across every affiliate.
+A daily-updating dashboard for **every MLB organization's** minor-league system —
+scores, prospects, risers/slumpers, and transactions across every affiliate,
+with a team switcher at the top plus a global Top-100 board.
 
 > Self-contained app. It lives in this folder and shares nothing with the
 > golf app at the repository root. Easy to extract into its own repo later.
@@ -10,11 +11,14 @@ scores, prospects, risers/slumpers, and transactions across every affiliate.
 
 | Feature | State |
 | --- | --- |
+| All 30 teams + team switcher | ✅ v1 |
 | Daily scores across all affiliates | ✅ v1 |
 | Prospect Watch (good games today, on the dashboard) | ✅ v1 |
-| Prospects (seeded Top-30, editable) | ✅ v1 |
+| Prospects (seeded Top-30, editable) | ✅ v1 (curated: Braves, Dodgers; others roster-derived) |
+| Top 100 prospects (global) | ✅ v1 (seeded, editable) |
 | Transactions feed | ✅ v1 |
 | Risers & Slumpers (game-log trend engine) | ✅ v1 |
+| Per-team theming + dynamic background | ✅ v1 |
 
 ## Stack
 
@@ -69,6 +73,20 @@ leave it unset — the app fetches live and only falls back to mock on error.
   tracked Top-30 prospects who had a notable game (with their rank + line), and
   links to a player-keyed video highlight from `/game/{pk}/content` when one
   exists, falling back to the game's Gameday page.
+
+## Multi-team
+
+- Every MLB org lives in `src/lib/teams.ts` (parent-club id + brand colors).
+  The selected team is stored in a cookie (`TeamSwitcher` → `getSelectedTeam`),
+  and all data fetchers take the org id, so scores, transactions, movers, and
+  prospect-watch work for any club. Brand colors flow through CSS variables, so
+  the whole UI (and the animated background) recolors per team.
+- **Prospects** uses a curated Top-30 seed where one exists
+  (`src/lib/prospectSeed.ts` — Braves & Dodgers today); for every other club it
+  auto-derives a Top-30 from the org's affiliate rosters (youngest at the
+  highest levels), clearly labeled, until a curated seed is dropped in.
+- **Top 100** (`/top100`) is a global seeded board (`src/lib/top100Seed.ts`),
+  enriched with each player's live id, level, and season stats.
 
 ## Look & feel
 

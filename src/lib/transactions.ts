@@ -1,11 +1,12 @@
 import type { Transaction, TransactionCategory, TransactionsFeed } from './types';
+import type { Team } from './teams';
+import { getTeamBySlug } from './teams';
 import { getAffiliates } from './mlb';
 import { mockTransactions } from './mock';
 
 const BASE = 'https://statsapi.mlb.com/api/v1';
 
-// Atlanta Braves parent organization id in the Stats API.
-const BRAVES_ORG_ID = 144;
+const DEFAULT_TEAM = getTeamBySlug('braves');
 
 const useMock = () => process.env.USE_MOCK_DATA === '1';
 
@@ -73,15 +74,18 @@ function mapTransaction(t: any): Transaction | null {
  * plus every minor-league affiliate — so promotions, demotions, IL moves,
  * signings and releases all show up. Falls back to mock on any failure.
  */
-export async function getTransactions(days = 30): Promise<TransactionsFeed> {
+export async function getTransactions(
+  days = 30,
+  team: Team = DEFAULT_TEAM,
+): Promise<TransactionsFeed> {
   const endDate = easternToday();
   const startDate = daysBefore(endDate, days);
 
   if (useMock()) return mockTransactions(startDate, endDate);
 
   try {
-    const affiliates = await getAffiliates();
-    const teamIds = [BRAVES_ORG_ID, ...affiliates.map((a) => a.teamId)];
+    const affiliates = await getAffiliates(team.id);
+    const teamIds = [team.id, ...affiliates.map((a) => a.teamId)];
 
     // The same move can appear under both the parent and affiliate; dedupe by id.
     const byId = new Map<string, Transaction>();

@@ -1,7 +1,10 @@
 import type { Mover, MoversPayload } from './types';
-import { PROSPECT_SEED, isPitcher, nameKey, prospectId } from './prospectSeed';
-import { buildRosterIndex, headshotUrl } from './prospects';
+import type { Team } from './teams';
+import { getTeamBySlug } from './teams';
+import { getTrackedProspects, headshotUrl, type TrackedProspect } from './prospects';
 import { mockMovers } from './mock';
+
+const DEFAULT_TEAM = getTeamBySlug('braves');
 
 const BASE = 'https://statsapi.mlb.com/api/v1';
 
@@ -113,21 +116,11 @@ function pitchRates(a: PitchAgg) {
 
 // --- per-player trend --------------------------------------------------------
 
-interface SeedMatch {
-  id: number;
-  position: string;
-  level: string;
-  team: string;
-}
-
-async function computeMover(
-  seed: (typeof PROSPECT_SEED)[number],
-  match: SeedMatch,
-  yr: string,
-): Promise<Mover | null> {
-  const pitcher = isPitcher(seed.position);
+async function computeMover(tp: TrackedProspect, yr: string): Promise<Mover | null> {
+  if (!tp.mlbamId) return null;
+  const pitcher = tp.isPitcher;
   const group = pitcher ? 'pitching' : 'hitting';
-  const url = `${BASE}/people/${match.id}/stats?stats=gameLog&season=${yr}&group=${group}&sportIds=11,12,13,14,16`;
+  const url = `${BASE}/people/${tp.mlbamId}/stats?stats=gameLog&season=${yr}&group=${group}&sportIds=11,12,13,14,16`;
 
   let splits: any[];
   try {
@@ -143,15 +136,15 @@ async function computeMover(
   if (recent.length < MIN_WINDOW_GAMES) return null;
 
   const base = {
-    id: prospectId(seed.name),
-    name: seed.name,
-    position: seed.position,
+    id: tp.id,
+    name: tp.name,
+    position: tp.position,
     isPitcher: pitcher,
-    level: match.level,
-    team: match.team,
-    mlbamId: match.id,
-    headshotUrl: headshotUrl(match.id),
-    profileUrl: `https://www.mlb.com/player/${match.id}`,
+    level: tp.level,
+    team: tp.team,
+    mlbamId: tp.mlbamId,
+    headshotUrl: headshotUrl(tp.mlbamId),
+    profileUrl: `https://www.mlb.com/player/${tp.mlbamId}`,
     window: recent.length,
   };
 
@@ -200,30 +193,14 @@ async function computeMover(
  * {@link WINDOW} games) vs. season baseline, computed live from game logs.
  * No stored history required. Falls back to mock on failure.
  */
-export async function getMovers(): Promise<MoversPayload> {
+export async function getMovers(team: Team = DEFAULT_TEAM): Promise<MoversPayload> {
   if (useMock()) return mockMovers();
 
   try {
     const yr = season();
-    const index = await buildRosterIndex(yr);
+    const { list } = await getTrackedProspects(team);
 
-    const results = await Promise.all(
-      PROSPECT_SEED.map(async (seed) => {
-        const match = index.get(nameKey(seed.name)) ?? null;
-        const id = seed.mlbamId ?? match?.id;
-        if (!id) return null;
-        return computeMover(
-          seed,
-          {
-            id,
-            position: match?.position ?? seed.position,
-            level: match?.level ?? String(seed.level ?? ''),
-            team: match?.team ?? '',
-          },
-          yr,
-        );
-      }),
-    );
+    const results = await Promise.all(list.map((tp) => computeMover(tp, yr)));
 
     const movers = results.filter((m): m is Mover => m !== null);
     const risers = movers

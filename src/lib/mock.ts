@@ -8,10 +8,14 @@ import type {
   ProspectsPayload,
   ProspectWatch,
   Scoreboard,
+  Top100Payload,
+  Top100Prospect,
   Transaction,
   TransactionsFeed,
 } from './types';
 import { PROSPECT_SEED, isPitcher, prospectId } from './prospectSeed';
+import { TOP100_SEED } from './top100Seed';
+import { getTeamBySlug } from './teams';
 
 // Offline / fallback dataset. Lets the UI render in network-restricted
 // sandboxes and during local dev without hitting the live MLB Stats API.
@@ -183,7 +187,7 @@ export function mockProspects(): ProspectsPayload {
     };
   });
 
-  return { prospects, season, isMock: true };
+  return { prospects, season, curated: true, isMock: true };
 }
 
 // ---------------------------------------------------------------------------
@@ -441,4 +445,69 @@ export function mockProspectWatch(date: string): ProspectWatch {
   ];
 
   return { date, performances, isMock: true };
+}
+
+// ---------------------------------------------------------------------------
+// Top 100 mock
+// ---------------------------------------------------------------------------
+
+/** Illustrative stat lines so the Top-100 board renders offline. */
+export function mockTop100(): Top100Payload {
+  const season = process.env.SEASON || String(new Date().getUTCFullYear());
+
+  const prospects: Top100Prospect[] = TOP100_SEED.map((s) => {
+    const pitcher = isPitcher(s.position);
+    const team = getTeamBySlug(s.team);
+    const rand = seeded(s.rank + 1000);
+
+    let hitting = null;
+    let pitching = null;
+    if (pitcher) {
+      const ip = 30 + rand() * 60;
+      pitching = {
+        games: 8 + Math.floor(rand() * 16),
+        w: Math.floor(rand() * 7),
+        l: Math.floor(rand() * 5),
+        era: two(2 + rand() * 3),
+        whip: two(1 + rand() * 0.4),
+        ip: ip.toFixed(1),
+        so: Math.floor(ip * (0.9 + rand() * 0.5)),
+        bb: Math.floor(ip * (0.25 + rand() * 0.2)),
+      };
+    } else {
+      const games = 30 + Math.floor(rand() * 60);
+      const avg = 0.24 + rand() * 0.07;
+      const obp = avg + 0.07 + rand() * 0.04;
+      const slg = avg + 0.15 + rand() * 0.13;
+      hitting = {
+        games,
+        avg: three(avg),
+        obp: three(obp),
+        slg: three(slg),
+        ops: three(obp + slg),
+        hr: Math.floor(rand() * 20),
+        rbi: Math.floor(games * (0.3 + rand() * 0.3)),
+        sb: Math.floor(rand() * 25),
+      };
+    }
+
+    return {
+      id: prospectId(s.name),
+      rank: s.rank,
+      name: s.name,
+      position: s.position,
+      isPitcher: pitcher,
+      teamSlug: s.team,
+      teamShort: team.short,
+      level: undefined,
+      eta: s.eta,
+      mlbamId: undefined,
+      headshotUrl: undefined,
+      profileUrl: undefined,
+      hitting,
+      pitching,
+    };
+  });
+
+  return { prospects, season, isMock: true };
 }

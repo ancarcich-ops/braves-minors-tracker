@@ -1,14 +1,15 @@
 import type { Game, ProspectPerformance, ProspectWatch } from './types';
+import type { Team } from './teams';
+import { getTeamBySlug } from './teams';
 import { getScoreboard } from './mlb';
-import { PROSPECT_SEED, isPitcher, nameKey, prospectId } from './prospectSeed';
-import { headshotUrl } from './prospects';
+import { nameKey } from './prospectSeed';
+import { getTrackedProspects, headshotUrl, type TrackedProspect } from './prospects';
 import { mockProspectWatch } from './mock';
 
 const BASE = 'https://statsapi.mlb.com/api/v1';
 const useMock = () => process.env.USE_MOCK_DATA === '1';
 
-// Seed lookup by loose name key, so we can match boxscore players to prospects.
-const SEED_BY_KEY = new Map(PROSPECT_SEED.map((s) => [nameKey(s.name), s]));
+const DEFAULT_TEAM = getTeamBySlug('braves');
 
 async function getJSON<T>(url: string): Promise<T> {
   const res = await fetch(url, { next: { revalidate: 300 } });
@@ -105,12 +106,20 @@ function bravesSide(game: Game): 'home' | 'away' | null {
  * rank, a stat line, and a link to video/recap when available. Live from
  * boxscores; degrades to mock.
  */
-export async function getProspectWatch(date: string): Promise<ProspectWatch> {
+export async function getProspectWatch(
+  date: string,
+  team: Team = DEFAULT_TEAM,
+): Promise<ProspectWatch> {
   if (useMock()) return mockProspectWatch(date);
 
   try {
-    const { games } = await getScoreboard(date);
+    const [{ games }, { list }] = await Promise.all([
+      getScoreboard(date, team.id),
+      getTrackedProspects(team),
+    ]);
     const played = games.filter((g) => g.state === 'live' || g.state === 'final');
+    // Match boxscore players to this org's tracked prospects.
+    const byKey = new Map<string, TrackedProspect>(list.map((p) => [nameKey(p.name), p]));
 
     const performances: ProspectPerformance[] = [];
 
@@ -118,7 +127,7 @@ export async function getProspectWatch(date: string): Promise<ProspectWatch> {
       played.map(async (game) => {
         try {
           const box = await getJSON<any>(`${BASE}/game/${game.gamePk}/boxscore`);
-          // Scan both sides; only Braves prospects will match the seed list.
+          // Scan both sides; only this org's tracked prospects will match.
           for (const sideKey of ['home', 'away'] as const) {
             const players = box?.teams?.[sideKey]?.players ?? {};
             const opponent =
@@ -126,10 +135,10 @@ export async function getProspectWatch(date: string): Promise<ProspectWatch> {
             for (const key of Object.keys(players)) {
               const pl = players[key];
               const fullName: string = pl?.person?.fullName ?? '';
-              const seed = SEED_BY_KEY.get(nameKey(fullName));
-              if (!seed) continue;
+              const tracked = byKey.get(nameKey(fullName));
+              if (!tracked) continue;
 
-              const pitcher = isPitcher(seed.position);
+              const pitcher = tracked.isPitcher;
               const line = pitcher
                 ? pitcherLine(pl?.stats?.pitching ?? {})
                 : hitterLine(pl?.stats?.batting ?? {});
@@ -141,10 +150,10 @@ export async function getProspectWatch(date: string): Promise<ProspectWatch> {
                 : undefined;
 
               performances.push({
-                id: prospectId(seed.name),
-                name: seed.name,
-                rank: seed.rank,
-                position: seed.position,
+                id: tracked.id,
+                name: tracked.name,
+                rank: tracked.rank,
+                position: tracked.position,
                 isPitcher: pitcher,
                 level: game.level,
                 team: game.affiliateName,

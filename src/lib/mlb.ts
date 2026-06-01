@@ -42,8 +42,8 @@ async function getJSON<T>(url: string): Promise<T> {
  * API rather than hardcoding team ids that shift with relocations/rebrands
  * (e.g. Mississippi Braves -> Columbus Clingstones, Rome Braves -> Emperors).
  */
-export async function getAffiliates(): Promise<Affiliate[]> {
-  const url = `${BASE}/teams/affiliates?teamIds=${BRAVES_ORG_ID}&season=${season()}`;
+export async function getAffiliates(orgId: number = BRAVES_ORG_ID): Promise<Affiliate[]> {
+  const url = `${BASE}/teams/affiliates?teamIds=${orgId}&season=${season()}`;
   const data = await getJSON<{ teams: any[] }>(url);
   const affiliates: Affiliate[] = (data.teams || [])
     .filter((t) => MINOR_SPORT_IDS.includes(t.sport?.id))
@@ -90,12 +90,15 @@ function side(teamNode: any, isBraves: boolean): GameSide {
   };
 }
 
-/** Today's (or a given date's) games across every Braves affiliate. */
-export async function getScoreboard(date: string): Promise<Scoreboard> {
+/** Today's (or a given date's) games across every affiliate of an org. */
+export async function getScoreboard(
+  date: string,
+  orgId: number = BRAVES_ORG_ID,
+): Promise<Scoreboard> {
   if (useMock()) return mockScoreboard(date);
 
   try {
-    const affiliates = await getAffiliates();
+    const affiliates = await getAffiliates(orgId);
     const byId = new Map(affiliates.map((a) => [a.teamId, a]));
     const teamIds = affiliates.map((a) => a.teamId).join(',');
     const sportIds = MINOR_SPORT_IDS.join(',');

@@ -4,6 +4,10 @@
 
 :root {
   color-scheme: dark;
+  /* Default brand palette (Braves). Overridden per-team on <body>. */
+  --brand-navy: 19 39 79;
+  --brand-red: 206 17 65;
+  --brand-gold: 234 170 0;
 }
 
 @layer base {

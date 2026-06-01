@@ -5,11 +5,13 @@ const config: Config = {
   theme: {
     extend: {
       colors: {
-        // Official Atlanta Braves palette + supporting neutrals.
+        // Brand palette is driven by CSS variables set per selected team
+        // (see globals.css defaults + <body> theme vars in layout.tsx), so
+        // every `braves-*` class recolors to the active club.
         braves: {
-          navy: '#13274F',
-          red: '#CE1141',
-          gold: '#EAAA00',
+          navy: 'rgb(var(--brand-navy) / <alpha-value>)',
+          red: 'rgb(var(--brand-red) / <alpha-value>)',
+          gold: 'rgb(var(--brand-gold) / <alpha-value>)',
         },
         ink: {
           950: '#070b16',

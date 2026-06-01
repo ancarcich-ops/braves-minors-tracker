@@ -4,16 +4,21 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { useEffect, useState } from 'react';
 
 // Bold, on-brand gradient "scenes" that crossfade over time. No external
-// images (keeps it fast and reliable), pure Braves navy / red / gold.
+// images (keeps it fast and reliable). Colors come from the active team's
+// brand CSS variables (set on <body>), so the field recolors per club.
+const NAVY = (a: number) => `rgb(var(--brand-navy) / ${a})`;
+const RED = (a: number) => `rgb(var(--brand-red) / ${a})`;
+const GOLD = (a: number) => `rgb(var(--brand-gold) / ${a})`;
+
 const SCENES = [
-  'radial-gradient(75rem 55rem at 82% -12%, rgba(206,17,65,0.30), transparent 60%),' +
-    'radial-gradient(70rem 60rem at -12% 112%, rgba(19,39,79,0.95), transparent 60%),' +
+  `radial-gradient(75rem 55rem at 82% -12%, ${RED(0.3)}, transparent 60%),` +
+    `radial-gradient(70rem 60rem at -12% 112%, ${NAVY(0.95)}, transparent 60%),` +
     'linear-gradient(160deg, #0a0f1e, #070b16)',
-  'radial-gradient(70rem 50rem at 12% -12%, rgba(234,170,0,0.22), transparent 55%),' +
-    'radial-gradient(80rem 70rem at 105% 105%, rgba(206,17,65,0.28), transparent 60%),' +
+  `radial-gradient(70rem 50rem at 12% -12%, ${GOLD(0.22)}, transparent 55%),` +
+    `radial-gradient(80rem 70rem at 105% 105%, ${RED(0.28)}, transparent 60%),` +
     'linear-gradient(160deg, #0b1430, #070b16)',
-  'radial-gradient(95rem 70rem at 50% -22%, rgba(206,17,65,0.32), transparent 60%),' +
-    'radial-gradient(60rem 60rem at -5% 105%, rgba(19,39,79,0.9), transparent 55%),' +
+  `radial-gradient(95rem 70rem at 50% -22%, ${RED(0.32)}, transparent 60%),` +
+    `radial-gradient(60rem 60rem at -5% 105%, ${NAVY(0.9)}, transparent 55%),` +
     'linear-gradient(160deg, #0a0f1e, #05070f)',
 ];
 
@@ -45,8 +50,7 @@ export default function BackgroundFX() {
       <motion.div
         className="absolute -inset-1/4"
         style={{
-          backgroundImage:
-            'radial-gradient(45rem 32rem at 50% 50%, rgba(234,170,0,0.07), transparent 70%)',
+          backgroundImage: `radial-gradient(45rem 32rem at 50% 50%, ${GOLD(0.07)}, transparent 70%)`,
         }}
         animate={{ x: ['-8%', '8%', '-8%'], y: ['-5%', '6%', '-5%'] }}
         transition={{ duration: 26, repeat: Infinity, ease: 'easeInOut' }}

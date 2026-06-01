@@ -4,14 +4,18 @@ import type {
   Prospect,
   ProspectsPayload,
 } from './types';
+import type { Team } from './teams';
+import { getTeamBySlug } from './teams';
 import { getAffiliates } from './mlb';
 import { mockProspects } from './mock';
-import { PROSPECT_SEED, isPitcher, nameKey, prospectId } from './prospectSeed';
+import { getSeed, isPitcher, nameKey, prospectId } from './prospectSeed';
 
 const BASE = 'https://statsapi.mlb.com/api/v1';
 
 const useMock = () => process.env.USE_MOCK_DATA === '1';
 const season = () => process.env.SEASON || String(new Date().getUTCFullYear());
+
+const DEFAULT_TEAM = getTeamBySlug('braves');
 
 export function headshotUrl(id: number): string {
   return (
@@ -30,15 +34,28 @@ async function getJSON<T>(url: string): Promise<T> {
 
 export interface RosterEntry {
   id: number;
+  name: string;
   position: string;
   age?: number;
   level: string;
   team: string;
 }
 
-/** Build a name -> {id, level, team, ...} index across every Braves affiliate. */
-export async function buildRosterIndex(yr: string): Promise<Map<string, RosterEntry>> {
-  const affiliates = await getAffiliates();
+const LEVEL_RANK: Record<string, number> = {
+  AAA: 0,
+  AA: 1,
+  'High-A': 2,
+  'Low-A': 3,
+  Rookie: 4,
+  DSL: 5,
+};
+
+/** Build a name -> {id, level, team, ...} index across an org's affiliates. */
+export async function buildRosterIndex(
+  yr: string,
+  orgId: number,
+): Promise<Map<string, RosterEntry>> {
+  const affiliates = await getAffiliates(orgId);
   const index = new Map<string, RosterEntry>();
   await Promise.all(
     affiliates.map(async (a) => {
@@ -53,6 +70,7 @@ export async function buildRosterIndex(yr: string): Promise<Map<string, RosterEn
           if (!index.has(key)) {
             index.set(key, {
               id: p.id,
+              name: p.fullName,
               position: r.position?.abbreviation || p.primaryPosition?.abbreviation || '',
               age: p.currentAge,
               level: a.level,
@@ -67,6 +85,82 @@ export async function buildRosterIndex(yr: string): Promise<Map<string, RosterEn
     }),
   );
   return index;
+}
+
+/** A team's tracked Top-30 — from a curated seed, or derived from rosters. */
+export interface TrackedProspect {
+  rank: number;
+  name: string;
+  position: string;
+  isPitcher: boolean;
+  id: string;
+  mlbamId?: number;
+  level?: string;
+  team?: string;
+  age?: number;
+  bats?: string;
+  throws?: string;
+  eta?: string;
+  note?: string;
+}
+
+export interface TrackedProspects {
+  list: TrackedProspect[];
+  curated: boolean;
+}
+
+/**
+ * Resolve the org's tracked prospects. Curated teams use their hand-seeded
+ * Top-30 (matched to live rosters for ids/levels); everyone else gets a list
+ * derived from affiliate rosters (youngest at the highest levels).
+ */
+export async function getTrackedProspects(team: Team): Promise<TrackedProspects> {
+  const yr = season();
+  const index = await buildRosterIndex(yr, team.id);
+  const seed = getSeed(team.slug);
+
+  if (seed) {
+    const list = seed.map((s): TrackedProspect => {
+      const match = index.get(nameKey(s.name));
+      return {
+        rank: s.rank,
+        name: s.name,
+        position: s.position,
+        isPitcher: isPitcher(s.position),
+        id: prospectId(s.name),
+        mlbamId: s.mlbamId ?? match?.id,
+        level: match?.level ?? (s.level as string | undefined),
+        team: match?.team,
+        age: match?.age ?? s.age,
+        bats: s.bats,
+        throws: s.throws,
+        eta: s.eta,
+        note: s.note,
+      };
+    });
+    return { list, curated: true };
+  }
+
+  // Roster-derived: rank by level (higher first), then by youth.
+  const derived = [...index.values()]
+    .sort((a, b) => {
+      const lr = (LEVEL_RANK[a.level] ?? 9) - (LEVEL_RANK[b.level] ?? 9);
+      if (lr !== 0) return lr;
+      return (a.age ?? 99) - (b.age ?? 99);
+    })
+    .slice(0, 30)
+    .map((e, i): TrackedProspect => ({
+      rank: i + 1,
+      name: e.name,
+      position: e.position,
+      isPitcher: isPitcher(e.position),
+      id: prospectId(e.name),
+      mlbamId: e.id,
+      level: e.level,
+      team: e.team,
+      age: e.age,
+    }));
+  return { list: derived, curated: false };
 }
 
 function mapHitting(stat: any): HittingStats {
@@ -96,7 +190,7 @@ function mapPitching(stat: any): PitchingStats {
 }
 
 /** Pull a player's season line, picking the split with the most playing time. */
-async function fetchStats(
+export async function fetchSeasonStats(
   id: number,
   pitcher: boolean,
   yr: string,
@@ -122,46 +216,43 @@ async function fetchStats(
   }
 }
 
-/** The seeded Top-30, enriched with live identity + 2026 stats (mock on failure). */
-export async function getProspects(): Promise<ProspectsPayload> {
+/** A team's Top-30, enriched with live identity + season stats (mock on failure). */
+export async function getProspects(team: Team = DEFAULT_TEAM): Promise<ProspectsPayload> {
   if (useMock()) return mockProspects();
 
   try {
     const yr = season();
-    const index = await buildRosterIndex(yr);
+    const { list, curated } = await getTrackedProspects(team);
+    if (list.length === 0) throw new Error('no prospects resolved');
 
     const prospects = await Promise.all(
-      PROSPECT_SEED.map(async (seed): Promise<Prospect> => {
-        const match = index.get(nameKey(seed.name));
-        const id = seed.mlbamId ?? match?.id;
-        const pitcher = isPitcher(seed.position);
-        const { hitting, pitching } = id
-          ? await fetchStats(id, pitcher, yr)
+      list.map(async (tp): Promise<Prospect> => {
+        const { hitting, pitching } = tp.mlbamId
+          ? await fetchSeasonStats(tp.mlbamId, tp.isPitcher, yr)
           : { hitting: null, pitching: null };
-
         return {
-          id: prospectId(seed.name),
-          rank: seed.rank,
-          name: seed.name,
-          position: seed.position,
-          isPitcher: pitcher,
-          bats: seed.bats,
-          throws: seed.throws,
-          age: match?.age ?? seed.age,
-          eta: seed.eta,
-          level: match?.level ?? seed.level,
-          team: match?.team,
-          mlbamId: id,
-          headshotUrl: id ? headshotUrl(id) : undefined,
-          profileUrl: id ? `https://www.mlb.com/player/${id}` : undefined,
-          note: seed.note,
+          id: tp.id,
+          rank: tp.rank,
+          name: tp.name,
+          position: tp.position,
+          isPitcher: tp.isPitcher,
+          bats: tp.bats,
+          throws: tp.throws,
+          age: tp.age,
+          eta: tp.eta,
+          level: tp.level,
+          team: tp.team,
+          mlbamId: tp.mlbamId,
+          headshotUrl: tp.mlbamId ? headshotUrl(tp.mlbamId) : undefined,
+          profileUrl: tp.mlbamId ? `https://www.mlb.com/player/${tp.mlbamId}` : undefined,
+          note: tp.note,
           hitting,
           pitching,
         };
       }),
     );
 
-    return { prospects, season: yr, isMock: false };
+    return { prospects, season: yr, isMock: false, curated };
   } catch (err) {
     console.error('[prospects] falling back to mock prospects:', err);
     return mockProspects();

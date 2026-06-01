@@ -1,5 +1,6 @@
 import { getScoreboard } from '@/lib/mlb';
 import { getProspectWatch } from '@/lib/prospectWatch';
+import { getSelectedTeam } from '@/lib/team-server';
 import type { Game, Level } from '@/lib/types';
 import ScoreCard from '@/components/ScoreCard';
 import ProspectWatch from '@/components/ProspectWatch';
@@ -54,10 +55,11 @@ export default async function DashboardPage({
 }: {
   searchParams: { date?: string };
 }) {
+  const team = getSelectedTeam();
   const date = searchParams.date || easternToday();
   const [{ games, isMock }, watch] = await Promise.all([
-    getScoreboard(date),
-    getProspectWatch(date),
+    getScoreboard(date, team.id),
+    getProspectWatch(date, team),
   ]);
 
   const live = games.filter((g) => g.state === 'live').length;
@@ -75,7 +77,7 @@ export default async function DashboardPage({
         <div className="mb-6">
           <div className="mb-1 flex items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-braves-red">
-              Around the Farm
+              {team.short} · Around the Farm
             </span>
             {isMock && (
               <span className="rounded-full bg-braves-gold/15 px-2 py-0.5 text-[10px] font-semibold text-braves-gold ring-1 ring-braves-gold/30">

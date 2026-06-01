@@ -3,16 +3,18 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion } from 'framer-motion';
-import { CalendarDays, Star, TrendingUp, ArrowLeftRight } from 'lucide-react';
+import { CalendarDays, Star, TrendingUp, ArrowLeftRight, Trophy } from 'lucide-react';
+import TeamSwitcher from './TeamSwitcher';
 
 const links = [
   { href: '/', label: 'Scores', icon: CalendarDays },
   { href: '/prospects', label: 'Prospects', icon: Star },
   { href: '/movers', label: 'Risers', icon: TrendingUp },
-  { href: '/transactions', label: 'Transactions', icon: ArrowLeftRight },
+  { href: '/transactions', label: 'Moves', icon: ArrowLeftRight },
+  { href: '/top100', label: 'Top 100', icon: Trophy },
 ];
 
-export default function Nav() {
+export default function Nav({ currentTeam }: { currentTeam: string }) {
   const pathname = usePathname();
 
   return (
@@ -20,14 +22,17 @@ export default function Nav() {
       {/* Braves accent stripe */}
       <div className="h-0.5 w-full bg-gradient-to-r from-braves-red via-braves-gold to-braves-red" />
       <div className="mx-auto flex max-w-5xl items-center justify-between gap-2 px-3 py-2.5 sm:px-4 sm:py-3">
-        <Link href="/" className="flex shrink-0 items-center gap-2">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-braves-red to-[#8d0b2c] text-sm font-black text-white shadow-glow ring-1 ring-braves-gold/40">
-            A
-          </span>
-          <span className="text-[15px] font-bold tracking-tight">
-            Braves <span className="text-braves-gold">Farm</span>
-          </span>
-        </Link>
+        <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+          <Link href="/" className="flex shrink-0 items-center gap-2">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-braves-red to-braves-navy text-sm font-black text-white shadow-glow ring-1 ring-braves-gold/40">
+              ⚾
+            </span>
+            <span className="hidden text-[15px] font-bold tracking-tight sm:inline">
+              Farm <span className="text-braves-gold">System</span>
+            </span>
+          </Link>
+          <TeamSwitcher current={currentTeam} />
+        </div>
 
         <nav className="flex flex-nowrap items-center gap-0.5 text-sm sm:gap-1">
           {links.map(({ href, label, icon: Icon }) => {

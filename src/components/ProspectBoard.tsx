@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { useEffect, useMemo, useState } from 'react';
 import type { Prospect } from '@/lib/types';
 
-const STORAGE_KEY = 'braves-prospect-order-v1';
+const STORAGE_PREFIX = 'prospect-order-v1';
 
 const LEVEL_STYLE: Record<string, string> = {
   AAA: 'bg-braves-red/15 text-red-300 ring-braves-red/30',
@@ -167,7 +167,14 @@ function Row({
   );
 }
 
-export default function ProspectBoard({ prospects }: { prospects: Prospect[] }) {
+export default function ProspectBoard({
+  prospects,
+  storageScope = 'default',
+}: {
+  prospects: Prospect[];
+  storageScope?: string;
+}) {
+  const storageKey = `${STORAGE_PREFIX}:${storageScope}`;
   // Seed order is deterministic, so SSR and the first client render match.
   const seedOrder = useMemo(() => prospects.map((p) => p.id), [prospects]);
   const [order, setOrder] = useState<string[]>(seedOrder);
@@ -178,7 +185,7 @@ export default function ProspectBoard({ prospects }: { prospects: Prospect[] }) 
   useEffect(() => {
     setHydrated(true);
     try {
-      const raw = localStorage.getItem(STORAGE_KEY);
+      const raw = localStorage.getItem(storageKey);
       if (raw) {
         const saved = JSON.parse(raw) as string[];
         if (Array.isArray(saved) && saved.length) setOrder(saved);
@@ -186,7 +193,7 @@ export default function ProspectBoard({ prospects }: { prospects: Prospect[] }) 
     } catch {
       /* ignore malformed storage */
     }
-  }, []);
+  }, [storageKey]);
 
   const byId = useMemo(() => new Map(prospects.map((p) => [p.id, p])), [prospects]);
 
@@ -210,7 +217,7 @@ export default function ProspectBoard({ prospects }: { prospects: Prospect[] }) 
   function persist(ids: string[]) {
     setOrder(ids);
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(ids));
+      localStorage.setItem(storageKey, JSON.stringify(ids));
     } catch {
       /* storage may be unavailable */
     }
@@ -226,7 +233,7 @@ export default function ProspectBoard({ prospects }: { prospects: Prospect[] }) 
 
   function reset() {
     try {
-      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(storageKey);
     } catch {
       /* ignore */
     }

@@ -112,6 +112,8 @@ export interface Prospect {
 export interface ProspectsPayload {
   prospects: Prospect[];
   season: string;
+  /** True for a hand-curated Top-30; false for a roster-derived fallback list. */
+  curated?: boolean;
   /** True when stats/identity came from the offline mock instead of the API. */
   isMock: boolean;
 }
@@ -230,5 +232,32 @@ export interface ProspectWatch {
   date: string; // YYYY-MM-DD
   performances: ProspectPerformance[];
   /** True when the data came from the offline mock instead of the live API. */
+  isMock: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Global Top 100
+// ---------------------------------------------------------------------------
+
+export interface Top100Prospect {
+  id: string;
+  rank: number;
+  name: string;
+  position: string;
+  isPitcher: boolean;
+  teamSlug: string;
+  teamShort: string;
+  level?: Level | string;
+  eta?: string;
+  mlbamId?: number;
+  headshotUrl?: string;
+  profileUrl?: string;
+  hitting: HittingStats | null;
+  pitching: PitchingStats | null;
+}
+
+export interface Top100Payload {
+  prospects: Top100Prospect[];
+  season: string;
   isMock: boolean;
 }

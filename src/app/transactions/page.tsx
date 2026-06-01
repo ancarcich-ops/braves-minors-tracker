@@ -1,4 +1,5 @@
 import { getTransactions } from '@/lib/transactions';
+import { getSelectedTeam } from '@/lib/team-server';
 import type { Transaction, TransactionCategory } from '@/lib/types';
 import { Reveal, Stagger, StaggerItem } from '@/components/motion';
 import {
@@ -80,7 +81,8 @@ function Move({ t }: { t: Transaction }) {
 }
 
 export default async function TransactionsPage() {
-  const { transactions, isMock } = await getTransactions(30);
+  const team = getSelectedTeam();
+  const { transactions, isMock } = await getTransactions(30, team);
 
   // Group by date, newest first (the feed is already sorted).
   const groups: { date: string; moves: Transaction[] }[] = [];
@@ -96,7 +98,7 @@ export default async function TransactionsPage() {
         <div className="mb-6">
           <div className="mb-1 flex items-center gap-2">
             <span className="text-xs font-semibold uppercase tracking-[0.2em] text-braves-red">
-              Roster Moves
+              {team.short} · Roster Moves
             </span>
             {isMock && (
               <span className="rounded-full bg-braves-gold/15 px-2 py-0.5 text-[10px] font-semibold text-braves-gold ring-1 ring-braves-gold/30">
