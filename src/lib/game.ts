@@ -37,48 +37,46 @@ export interface Pick {
   player: Player;
 }
 
-/** A team+decade pairing the slot machine can land on for the current round. */
+/** The era the slot machine lands on, plus every player you can draft from it. */
 export interface Combo {
-  team: string;
   decade: Decade;
-  players: Player[]; // eligible players at this team/decade/position
+  players: Player[]; // every available player at the round's position in this decade
 }
 
-/**
- * Every team+decade combo that has at least one draftable player for the given
- * position, excluding decades already used and players already picked.
- */
-export function eligibleCombos(
+/** Every undrafted player at a position in a given decade, best first. */
+export function availablePlayers(
+  position: Position,
+  decade: Decade,
+  pickedIds: Set<string>,
+): Player[] {
+  return PLAYERS.filter(
+    (pl) => pl.pos === position && pl.decade === decade && !pickedIds.has(pl.id),
+  ).sort((a, b) => b.ovr - a.ovr);
+}
+
+/** Decades still in play that have at least one draftable player at a position. */
+export function eligibleDecades(
   position: Position,
   usedDecades: Set<Decade>,
   pickedIds: Set<string>,
-): Combo[] {
-  const byKey = new Map<string, Combo>();
-  for (const pl of PLAYERS) {
-    if (pl.pos !== position) continue;
-    if (usedDecades.has(pl.decade)) continue;
-    if (pickedIds.has(pl.id)) continue;
-    const key = `${pl.team}|${pl.decade}`;
-    let combo = byKey.get(key);
-    if (!combo) {
-      combo = { team: pl.team, decade: pl.decade, players: [] };
-      byKey.set(key, combo);
-    }
-    combo.players.push(pl);
-  }
-  // Best players first within each combo.
-  for (const combo of byKey.values()) combo.players.sort((a, b) => b.ovr - a.ovr);
-  return [...byKey.values()];
+): Decade[] {
+  return DECADES.filter(
+    (d) => !usedDecades.has(d) && availablePlayers(position, d, pickedIds).length > 0,
+  );
 }
 
-/** Pick a random eligible combo for the slot machine to settle on. */
+/**
+ * Spin for the current position: land on a random eligible decade and surface
+ * every player at that position from that era so there's a real choice to make.
+ */
 export function spin(
   position: Position,
   usedDecades: Set<Decade>,
   pickedIds: Set<string>,
   rand: () => number = Math.random,
 ): Combo | null {
-  const combos = eligibleCombos(position, usedDecades, pickedIds);
-  if (combos.length === 0) return null;
-  return combos[Math.floor(rand() * combos.length)];
+  const decades = eligibleDecades(position, usedDecades, pickedIds);
+  if (decades.length === 0) return null;
+  const decade = decades[Math.floor(rand() * decades.length)];
+  return { decade, players: availablePlayers(position, decade, pickedIds) };
 }

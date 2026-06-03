@@ -45,14 +45,18 @@ function seedFrom(picks: Pick[]): number {
   return h >>> 0;
 }
 
-// Map average OVR -> per-game win probability. Calibrated to real play: a
-// typical drafted roster (~89 OVR) is around a coin-flip-plus, while only a
-// near-optimal (~96 OVR) lineup pushes a genuine, thin shot at an unbeaten
-// season. The steep slope makes every OVR point matter.
+// Map average OVR -> per-game win probability. Calibrated to real play now that
+// every era serves up its full slate of stars: casual drafting (~89 OVR) lands
+// around 100 wins, a sharp roster (~92) pushes ~130, and only a near-optimal
+// (~96+) lineup gets a genuine, thin shot at an unbeaten season.
 function winProbability(avgOvr: number): number {
-  const k = 0.4;
-  const center = 87.8;
-  return 1 / (1 + Math.exp(-k * (avgOvr - center)));
+  const k = 0.3;
+  const center = 87.5;
+  const base = 1 / (1 + Math.exp(-k * (avgOvr - center)));
+  // Top-end lift: only a stacked, ~94+ roster nudges into genuine (if thin)
+  // perfect-season territory, keeping 162-0 the holy grail it should be.
+  const lift = Math.max(0, avgOvr - 93) * 0.012;
+  return Math.min(0.99, base + lift);
 }
 
 function verdictFor(wins: number): Verdict {

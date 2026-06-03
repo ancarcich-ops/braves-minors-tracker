@@ -84,7 +84,8 @@ export default function Game() {
       <div className="rounded-2xl border border-chalk/10 bg-panel/70 p-5 diamond-bg">
         <SlotMachine
           spinKey={spinKey}
-          target={combo}
+          position={position}
+          targetDecade={combo?.decade ?? null}
           onSettle={() => setPhase('choosing')}
         />
 
@@ -106,11 +107,10 @@ export default function Game() {
             <div className="animate-pop">
               <p className="mb-3 text-center text-sm text-chalk/70">
                 Draft your {POSITION_NAMES[position]} from the{' '}
-                <span className="font-bold text-chalk">
-                  {combo.decade} {TEAM_NAMES[combo.team]}
-                </span>
+                <span className="font-bold text-chalk">{combo.decade}</span>
+                <span className="text-chalk/40"> · {combo.players.length} available</span>
               </p>
-              <div className="grid gap-2 sm:grid-cols-2">
+              <div className="grid max-h-72 gap-2 overflow-y-auto sm:grid-cols-2">
                 {combo.players.map((pl) => (
                   <button
                     key={pl.id}
@@ -119,9 +119,7 @@ export default function Game() {
                   >
                     <span>
                       <span className="block font-bold">{pl.name}</span>
-                      <span className="block text-xs text-chalk/45">
-                        {pl.decade} · {TEAM_NAMES[pl.team]}
-                      </span>
+                      <span className="block text-xs text-chalk/45">{TEAM_NAMES[pl.team]}</span>
                     </span>
                     <span className="rounded bg-grass/20 px-2 py-1 text-sm font-black tabular-nums text-grass">
                       {pl.ovr}
