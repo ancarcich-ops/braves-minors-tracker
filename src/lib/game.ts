@@ -1,8 +1,7 @@
-// Core game rules for 162-0: round order, decades, and the slot-machine /
-// eligibility logic that mirrors 82-0's "spin a team + decade, draft a player"
-// loop with a one-player-per-decade constraint.
+// Core game rules for 162-0: round order and the per-round "deal a hand of
+// stars at this position, draft one" loop — a baseball take on 82-0's spin.
 
-import { PLAYERS, type Decade, type Player, type Position } from './players';
+import { PLAYERS, type Player, type Position } from './players';
 
 // Roster is filled one position per round, in this order.
 export const POSITIONS: Position[] = ['SP', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF'];
@@ -19,17 +18,8 @@ export const POSITION_NAMES: Record<Position, string> = {
   RF: 'Right Field',
 };
 
-export const DECADES: Decade[] = [
-  '1930s',
-  '1940s',
-  '1950s',
-  '1960s',
-  '1970s',
-  '1980s',
-  '1990s',
-  '2000s',
-  '2010s',
-];
+// How many candidates the slot machine deals each round.
+export const HAND_SIZE = 6;
 
 // A drafted roster slot.
 export interface Pick {
@@ -37,48 +27,35 @@ export interface Pick {
   player: Player;
 }
 
-/** A team+decade pairing the slot machine can land on for the current round. */
-export interface Combo {
-  team: string;
-  decade: Decade;
-  players: Player[]; // eligible players at this team/decade/position
+/**
+ * The pool of draftable players at a position: every undrafted player, deduped
+ * by name to the highest-rated version (so a legend who peaked across two
+ * decades shows once, at their best).
+ */
+export function positionPool(position: Position, pickedIds: Set<string>): Player[] {
+  const byName = new Map<string, Player>();
+  for (const pl of PLAYERS) {
+    if (pl.pos !== position || pickedIds.has(pl.id)) continue;
+    const cur = byName.get(pl.name);
+    if (!cur || pl.ovr > cur.ovr) byName.set(pl.name, pl);
+  }
+  return [...byName.values()];
 }
 
 /**
- * Every team+decade combo that has at least one draftable player for the given
- * position, excluding decades already used and players already picked.
+ * Deal a shuffled hand of candidates for the round's position. Always offers a
+ * real choice (up to HAND_SIZE players), drawn from across every era.
  */
-export function eligibleCombos(
+export function dealHand(
   position: Position,
-  usedDecades: Set<Decade>,
-  pickedIds: Set<string>,
-): Combo[] {
-  const byKey = new Map<string, Combo>();
-  for (const pl of PLAYERS) {
-    if (pl.pos !== position) continue;
-    if (usedDecades.has(pl.decade)) continue;
-    if (pickedIds.has(pl.id)) continue;
-    const key = `${pl.team}|${pl.decade}`;
-    let combo = byKey.get(key);
-    if (!combo) {
-      combo = { team: pl.team, decade: pl.decade, players: [] };
-      byKey.set(key, combo);
-    }
-    combo.players.push(pl);
-  }
-  // Best players first within each combo.
-  for (const combo of byKey.values()) combo.players.sort((a, b) => b.ovr - a.ovr);
-  return [...byKey.values()];
-}
-
-/** Pick a random eligible combo for the slot machine to settle on. */
-export function spin(
-  position: Position,
-  usedDecades: Set<Decade>,
   pickedIds: Set<string>,
   rand: () => number = Math.random,
-): Combo | null {
-  const combos = eligibleCombos(position, usedDecades, pickedIds);
-  if (combos.length === 0) return null;
-  return combos[Math.floor(rand() * combos.length)];
+  size: number = HAND_SIZE,
+): Player[] {
+  const pool = positionPool(position, pickedIds);
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, Math.min(size, pool.length)).sort((a, b) => b.ovr - a.ovr);
 }

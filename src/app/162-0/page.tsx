@@ -4,14 +4,8 @@ import { useMemo, useState } from 'react';
 import RosterBar from '@/components/RosterBar';
 import ResultScreen from '@/components/ResultScreen';
 import SlotMachine from '@/components/SlotMachine';
-import {
-  POSITIONS,
-  POSITION_NAMES,
-  spin,
-  type Combo,
-  type Pick,
-} from '@/lib/game';
-import { TEAM_NAMES, type Decade, type Player } from '@/lib/players';
+import { POSITIONS, POSITION_NAMES, dealHand, positionPool, type Pick } from '@/lib/game';
+import { TEAM_NAMES, type Player } from '@/lib/players';
 import { simulateSeason, type SeasonResult } from '@/lib/sim';
 
 type Phase = 'intro' | 'ready' | 'spinning' | 'choosing' | 'result';
@@ -19,16 +13,16 @@ type Phase = 'intro' | 'ready' | 'spinning' | 'choosing' | 'result';
 export default function Game() {
   const [phase, setPhase] = useState<Phase>('intro');
   const [picks, setPicks] = useState<Pick[]>([]);
-  const [combo, setCombo] = useState<Combo | null>(null);
+  const [hand, setHand] = useState<Player[]>([]);
   const [spinKey, setSpinKey] = useState(0);
 
   const roundIndex = picks.length;
   const position = POSITIONS[roundIndex];
-  const usedDecades = useMemo(
-    () => new Set<Decade>(picks.map((p) => p.player.decade)),
-    [picks],
-  );
   const pickedIds = useMemo(() => new Set(picks.map((p) => p.player.id)), [picks]);
+  const poolNames = useMemo(
+    () => positionPool(position, pickedIds).map((p) => p.name),
+    [position, pickedIds],
+  );
 
   const result: SeasonResult | null = useMemo(
     () => (phase === 'result' ? simulateSeason(picks) : null),
@@ -37,14 +31,12 @@ export default function Game() {
 
   function start() {
     setPicks([]);
-    setCombo(null);
+    setHand([]);
     setPhase('ready');
   }
 
   function doSpin() {
-    const target = spin(position, usedDecades, pickedIds);
-    if (!target) return; // coverage guarantees this won't happen
-    setCombo(target);
+    setHand(dealHand(position, pickedIds));
     setSpinKey((k) => k + 1);
     setPhase('spinning');
   }
@@ -52,7 +44,7 @@ export default function Game() {
   function draft(player: Player) {
     const next = [...picks, { position, player }];
     setPicks(next);
-    setCombo(null);
+    setHand([]);
     setPhase(next.length === POSITIONS.length ? 'result' : 'ready');
   }
 
@@ -84,7 +76,8 @@ export default function Game() {
       <div className="rounded-2xl border border-chalk/10 bg-panel/70 p-5 diamond-bg">
         <SlotMachine
           spinKey={spinKey}
-          target={combo}
+          position={position}
+          pool={poolNames}
           onSettle={() => setPhase('choosing')}
         />
 
@@ -94,24 +87,22 @@ export default function Game() {
               onClick={doSpin}
               className="w-full rounded-lg bg-seam px-4 py-3 text-sm font-black uppercase tracking-wider text-night transition-transform hover:scale-[1.01]"
             >
-              Spin for your {POSITION_NAMES[position]}
+              Deal your {POSITION_NAMES[position]} hand
             </button>
           )}
 
           {phase === 'spinning' && (
-            <div className="text-center text-sm text-chalk/50">Spinning…</div>
+            <div className="text-center text-sm text-chalk/50">Scouting the board…</div>
           )}
 
-          {phase === 'choosing' && combo && (
+          {phase === 'choosing' && hand.length > 0 && (
             <div className="animate-pop">
               <p className="mb-3 text-center text-sm text-chalk/70">
-                Draft your {POSITION_NAMES[position]} from the{' '}
-                <span className="font-bold text-chalk">
-                  {combo.decade} {TEAM_NAMES[combo.team]}
-                </span>
+                Draft your {POSITION_NAMES[position]}
+                <span className="text-chalk/40"> · {hand.length} on the board</span>
               </p>
               <div className="grid gap-2 sm:grid-cols-2">
-                {combo.players.map((pl) => (
+                {hand.map((pl) => (
                   <button
                     key={pl.id}
                     onClick={() => draft(pl)}
@@ -135,7 +126,7 @@ export default function Game() {
       </div>
 
       <p className="mt-4 text-center text-xs text-chalk/35">
-        One player per decade — every era can be used only once.
+        A fresh hand of all-time greats every round — pick the one who wins you the most games.
       </p>
     </Shell>
   );
@@ -166,10 +157,8 @@ function Intro({ onStart }: { onStart: () => void }) {
       </p>
 
       <p className="mt-8 max-w-md text-chalk/70">
-        Spin a <span className="font-semibold text-chalk">franchise</span> and a{' '}
-        <span className="font-semibold text-chalk">decade</span>, then draft the best player from
-        that team and era. Fill all nine positions — one legend per decade — and simulate a
-        162-game season.
+        Each round you&apos;re dealt a hand of all-time greats at one position. Draft the player you
+        want, fill all nine spots, then simulate a 162-game season.
       </p>
       <p className="mt-3 max-w-md text-sm text-chalk/45">
         Nobody&apos;s ever gone 162-0. Build the team that finally does.
@@ -185,11 +174,11 @@ function Intro({ onStart }: { onStart: () => void }) {
       <div className="mt-10 grid w-full max-w-md grid-cols-3 gap-3 text-left text-xs text-chalk/55">
         <div className="rounded-lg border border-chalk/10 bg-panel/60 p-3">
           <div className="mb-1 font-black text-seam">1</div>
-          Spin the team + decade reels each round.
+          Deal a hand of legends for each position.
         </div>
         <div className="rounded-lg border border-chalk/10 bg-panel/60 p-3">
           <div className="mb-1 font-black text-seam">2</div>
-          Draft a player — one per decade, no repeats.
+          Draft one — the bigger the star, the more wins.
         </div>
         <div className="rounded-lg border border-chalk/10 bg-panel/60 p-3">
           <div className="mb-1 font-black text-seam">3</div>

@@ -1,66 +1,77 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { DECADES } from '@/lib/game';
-import { TEAM_NAMES, type Decade } from '@/lib/players';
-
-const TEAM_CODES = Object.keys(TEAM_NAMES);
+import { POSITION_NAMES } from '@/lib/game';
+import { type Position } from '@/lib/players';
 
 interface Props {
-  /** Bumped each time a spin starts. */
+  /** Bumped each time a deal starts. */
   spinKey: number;
-  /** The team+decade the reels should settle on, or null when idle. */
-  target: { team: string; decade: Decade } | null;
+  /** The position being drafted this round (the locked reel). */
+  position: Position;
+  /** Candidate names to flicker through while "scouting". */
+  pool: string[];
   onSettle: () => void;
 }
 
-function Reel({ label, value, spinning }: { label: string; value: string; spinning: boolean }) {
+function Reel({
+  label,
+  value,
+  spinning,
+  locked,
+}: {
+  label: string;
+  value: string;
+  spinning: boolean;
+  locked?: boolean;
+}) {
   return (
     <div className="flex-1">
       <div className="mb-1 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-chalk/40">
         {label}
       </div>
-      <div className="relative h-16 overflow-hidden rounded-lg border border-chalk/15 bg-night/60 shadow-inner">
-        <div
+      <div
+        className={[
+          'relative flex h-16 items-center justify-center overflow-hidden rounded-lg border px-2 text-center shadow-inner',
+          locked ? 'border-seam/40 bg-seam/5' : 'border-chalk/15 bg-night/60',
+        ].join(' ')}
+      >
+        <span
           className={[
-            'flex h-full items-center justify-center px-2 text-center text-sm font-bold leading-tight',
-            spinning ? 'blur-[1px] opacity-70' : 'animate-pop',
+            'text-sm font-bold leading-tight',
+            spinning && !locked ? 'blur-[1px] opacity-70' : 'animate-pop',
           ].join(' ')}
         >
           {value}
-        </div>
+        </span>
       </div>
     </div>
   );
 }
 
-export default function SlotMachine({ spinKey, target, onSettle }: Props) {
-  const [teamLabel, setTeamLabel] = useState('—');
-  const [decadeLabel, setDecadeLabel] = useState('—');
+export default function SlotMachine({ spinKey, position, pool, onSettle }: Props) {
+  const [nameLabel, setNameLabel] = useState('—');
   const [spinning, setSpinning] = useState(false);
   const settledRef = useRef(false);
 
   useEffect(() => {
-    if (spinKey === 0 || !target) return;
+    if (spinKey === 0 || pool.length === 0) return;
     settledRef.current = false;
     setSpinning(true);
 
-    // Cycle random labels to fake the reel motion.
     const cycle = setInterval(() => {
-      setTeamLabel(TEAM_NAMES[TEAM_CODES[Math.floor(Math.random() * TEAM_CODES.length)]]);
-      setDecadeLabel(DECADES[Math.floor(Math.random() * DECADES.length)]);
+      setNameLabel(pool[Math.floor(Math.random() * pool.length)]);
     }, 70);
 
     const stop = setTimeout(() => {
       clearInterval(cycle);
-      setTeamLabel(TEAM_NAMES[target.team] ?? target.team);
-      setDecadeLabel(target.decade);
       setSpinning(false);
+      setNameLabel('On the board');
       if (!settledRef.current) {
         settledRef.current = true;
         onSettle();
       }
-    }, 1300);
+    }, 1200);
 
     return () => {
       clearInterval(cycle);
@@ -71,9 +82,9 @@ export default function SlotMachine({ spinKey, target, onSettle }: Props) {
 
   return (
     <div className="flex items-stretch gap-3">
-      <Reel label="Franchise" value={teamLabel} spinning={spinning} />
-      <div className="flex items-end pb-5 text-2xl font-black text-seam">×</div>
-      <Reel label="Era" value={decadeLabel} spinning={spinning} />
+      <Reel label="Position" value={POSITION_NAMES[position]} spinning={spinning} locked />
+      <div className="flex items-end pb-5 text-2xl font-black text-seam">›</div>
+      <Reel label="Scouting" value={spinning ? nameLabel : 'On the board'} spinning={spinning} />
     </div>
   );
 }
