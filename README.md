@@ -6,6 +6,20 @@ scores, prospects, risers/slumpers, and transactions across every affiliate.
 > Self-contained app. It lives in this folder and shares nothing with the
 > golf app at the repository root. Easy to extract into its own repo later.
 
+## Also in here: **162-0** — the perfect-season game
+
+A standalone browser game lives alongside the tracker at **`/162-0`** (a
+baseball take on [82-0.com](https://82-0.com)). Each round a slot machine spins
+a **franchise + decade**; you draft the best player from that team and era to
+fill one of nine lineup spots — using **one player per decade**. Then a season
+sim plays out 162 games and hands you a record. Nobody's gone 162-0 yet.
+
+It's a separate route group, so it shares zero UI with the tracker:
+
+- `src/app/162-0/` — the game (client) + its full-screen layout
+- `src/app/(tracker)/` — the tracker routes (`/`, `/prospects`, `/movers`, `/transactions`)
+- `src/lib/players.ts` · `game.ts` · `sim.ts` — game data, draft rules, season simulation
+
 ## Status
 
 | Feature | State |

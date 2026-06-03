@@ -1,6 +1,5 @@
 import type { Metadata } from 'next';
 import './globals.css';
-import Nav from '@/components/Nav';
 
 export const metadata: Metadata = {
   title: 'Braves Farm Tracker',
@@ -8,16 +7,13 @@ export const metadata: Metadata = {
     'Daily scores, prospects, risers & slumpers, and transactions across the Atlanta Braves minor-league system.',
 };
 
+// Bare root layout: just the document shell. Per-section chrome (the tracker's
+// nav/footer, the 162-0 game's full-screen canvas) lives in nested layouts so
+// the two apps can share this codebase without sharing UI.
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="min-h-screen">
-        <Nav />
-        <main className="mx-auto max-w-5xl px-4 py-6">{children}</main>
-        <footer className="mx-auto max-w-5xl px-4 py-10 text-xs text-white/40">
-          Unofficial. Data from the MLB Stats API. Not affiliated with MLB or the Atlanta Braves.
-        </footer>
-      </body>
+      <body className="min-h-screen">{children}</body>
     </html>
   );
 }
