@@ -17,12 +17,18 @@ export default function Nav() {
           </span>
           <span>Braves Farm</span>
         </Link>
-        <nav className="flex flex-wrap gap-4 text-sm text-white/70">
+        <nav className="flex flex-wrap items-center gap-4 text-sm text-white/70">
           {links.map((l) => (
             <Link key={l.href} href={l.href} className="hover:text-white">
               {l.label}
             </Link>
           ))}
+          <Link
+            href="/162-0"
+            className="rounded-full border border-white/20 px-2.5 py-0.5 text-xs font-semibold text-white/80 hover:bg-white/10 hover:text-white"
+          >
+            162-0 Game
+          </Link>
         </nav>
       </div>
     </header>
