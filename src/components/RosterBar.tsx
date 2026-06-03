@@ -5,33 +5,27 @@ import { TEAM_NAMES } from '@/lib/players';
 
 interface Props {
   picks: Pick[];
-  currentIndex: number;
 }
 
-export default function RosterBar({ picks, currentIndex }: Props) {
+export default function RosterBar({ picks }: Props) {
   const byPosition = new Map(picks.map((pk) => [pk.position, pk]));
 
   return (
     <div className="grid grid-cols-3 gap-2 sm:grid-cols-9">
-      {POSITIONS.map((pos, i) => {
+      {POSITIONS.map((pos) => {
         const pk = byPosition.get(pos);
-        const isCurrent = i === currentIndex && !pk;
         return (
           <div
             key={pos}
             className={[
               'rounded-lg border px-2 py-1.5 text-center transition-colors',
-              pk
-                ? 'border-grass/40 bg-grass/10'
-                : isCurrent
-                  ? 'border-seam bg-seam/10'
-                  : 'border-chalk/10 bg-night/40',
+              pk ? 'border-grass/40 bg-grass/10' : 'border-chalk/10 bg-night/40',
             ].join(' ')}
           >
             <div
               className={[
                 'text-[10px] font-bold uppercase tracking-wider',
-                isCurrent ? 'text-seam' : 'text-chalk/50',
+                pk ? 'text-chalk/50' : 'text-chalk/35',
               ].join(' ')}
             >
               {pos}
@@ -46,7 +40,7 @@ export default function RosterBar({ picks, currentIndex }: Props) {
                 </div>
               </div>
             ) : (
-              <div className="text-[11px] text-chalk/25">—</div>
+              <div className="text-[11px] text-chalk/25">open</div>
             )}
           </div>
         );
