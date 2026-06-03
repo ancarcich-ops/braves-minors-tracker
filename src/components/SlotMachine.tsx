@@ -1,16 +1,16 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { DECADES, POSITION_NAMES } from '@/lib/game';
-import { type Decade, type Position } from '@/lib/players';
+import { POSITION_NAMES } from '@/lib/game';
+import { type Position } from '@/lib/players';
 
 interface Props {
-  /** Bumped each time a spin starts. */
+  /** Bumped each time a deal starts. */
   spinKey: number;
   /** The position being drafted this round (the locked reel). */
   position: Position;
-  /** The era the reel should settle on, or null when idle. */
-  targetDecade: Decade | null;
+  /** Candidate names to flicker through while "scouting". */
+  pool: string[];
   onSettle: () => void;
 }
 
@@ -49,30 +49,29 @@ function Reel({
   );
 }
 
-export default function SlotMachine({ spinKey, position, targetDecade, onSettle }: Props) {
-  const [decadeLabel, setDecadeLabel] = useState('—');
+export default function SlotMachine({ spinKey, position, pool, onSettle }: Props) {
+  const [nameLabel, setNameLabel] = useState('—');
   const [spinning, setSpinning] = useState(false);
   const settledRef = useRef(false);
 
   useEffect(() => {
-    if (spinKey === 0 || !targetDecade) return;
+    if (spinKey === 0 || pool.length === 0) return;
     settledRef.current = false;
     setSpinning(true);
 
-    // Cycle random eras to fake the reel motion.
     const cycle = setInterval(() => {
-      setDecadeLabel(DECADES[Math.floor(Math.random() * DECADES.length)]);
+      setNameLabel(pool[Math.floor(Math.random() * pool.length)]);
     }, 70);
 
     const stop = setTimeout(() => {
       clearInterval(cycle);
-      setDecadeLabel(targetDecade);
       setSpinning(false);
+      setNameLabel('On the board');
       if (!settledRef.current) {
         settledRef.current = true;
         onSettle();
       }
-    }, 1300);
+    }, 1200);
 
     return () => {
       clearInterval(cycle);
@@ -84,8 +83,8 @@ export default function SlotMachine({ spinKey, position, targetDecade, onSettle 
   return (
     <div className="flex items-stretch gap-3">
       <Reel label="Position" value={POSITION_NAMES[position]} spinning={spinning} locked />
-      <div className="flex items-end pb-5 text-2xl font-black text-seam">×</div>
-      <Reel label="Era" value={decadeLabel} spinning={spinning} />
+      <div className="flex items-end pb-5 text-2xl font-black text-seam">›</div>
+      <Reel label="Scouting" value={spinning ? nameLabel : 'On the board'} spinning={spinning} />
     </div>
   );
 }

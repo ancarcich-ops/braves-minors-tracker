@@ -50,8 +50,8 @@ function seedFrom(picks: Pick[]): number {
 // around 100 wins, a sharp roster (~92) pushes ~130, and only a near-optimal
 // (~96+) lineup gets a genuine, thin shot at an unbeaten season.
 function winProbability(avgOvr: number): number {
-  const k = 0.3;
-  const center = 87.5;
+  const k = 0.2;
+  const center = 88;
   const base = 1 / (1 + Math.exp(-k * (avgOvr - center)));
   // Top-end lift: only a stacked, ~94+ roster nudges into genuine (if thin)
   // perfect-season territory, keeping 162-0 the holy grail it should be.

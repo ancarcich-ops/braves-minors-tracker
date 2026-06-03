@@ -1,8 +1,7 @@
-// Core game rules for 162-0: round order, decades, and the slot-machine /
-// eligibility logic that mirrors 82-0's "spin a team + decade, draft a player"
-// loop with a one-player-per-decade constraint.
+// Core game rules for 162-0: round order and the per-round "deal a hand of
+// stars at this position, draft one" loop — a baseball take on 82-0's spin.
 
-import { PLAYERS, type Decade, type Player, type Position } from './players';
+import { PLAYERS, type Player, type Position } from './players';
 
 // Roster is filled one position per round, in this order.
 export const POSITIONS: Position[] = ['SP', 'C', '1B', '2B', '3B', 'SS', 'LF', 'CF', 'RF'];
@@ -19,17 +18,8 @@ export const POSITION_NAMES: Record<Position, string> = {
   RF: 'Right Field',
 };
 
-export const DECADES: Decade[] = [
-  '1930s',
-  '1940s',
-  '1950s',
-  '1960s',
-  '1970s',
-  '1980s',
-  '1990s',
-  '2000s',
-  '2010s',
-];
+// How many candidates the slot machine deals each round.
+export const HAND_SIZE = 6;
 
 // A drafted roster slot.
 export interface Pick {
@@ -37,46 +27,35 @@ export interface Pick {
   player: Player;
 }
 
-/** The era the slot machine lands on, plus every player you can draft from it. */
-export interface Combo {
-  decade: Decade;
-  players: Player[]; // every available player at the round's position in this decade
-}
-
-/** Every undrafted player at a position in a given decade, best first. */
-export function availablePlayers(
-  position: Position,
-  decade: Decade,
-  pickedIds: Set<string>,
-): Player[] {
-  return PLAYERS.filter(
-    (pl) => pl.pos === position && pl.decade === decade && !pickedIds.has(pl.id),
-  ).sort((a, b) => b.ovr - a.ovr);
-}
-
-/** Decades still in play that have at least one draftable player at a position. */
-export function eligibleDecades(
-  position: Position,
-  usedDecades: Set<Decade>,
-  pickedIds: Set<string>,
-): Decade[] {
-  return DECADES.filter(
-    (d) => !usedDecades.has(d) && availablePlayers(position, d, pickedIds).length > 0,
-  );
+/**
+ * The pool of draftable players at a position: every undrafted player, deduped
+ * by name to the highest-rated version (so a legend who peaked across two
+ * decades shows once, at their best).
+ */
+export function positionPool(position: Position, pickedIds: Set<string>): Player[] {
+  const byName = new Map<string, Player>();
+  for (const pl of PLAYERS) {
+    if (pl.pos !== position || pickedIds.has(pl.id)) continue;
+    const cur = byName.get(pl.name);
+    if (!cur || pl.ovr > cur.ovr) byName.set(pl.name, pl);
+  }
+  return [...byName.values()];
 }
 
 /**
- * Spin for the current position: land on a random eligible decade and surface
- * every player at that position from that era so there's a real choice to make.
+ * Deal a shuffled hand of candidates for the round's position. Always offers a
+ * real choice (up to HAND_SIZE players), drawn from across every era.
  */
-export function spin(
+export function dealHand(
   position: Position,
-  usedDecades: Set<Decade>,
   pickedIds: Set<string>,
   rand: () => number = Math.random,
-): Combo | null {
-  const decades = eligibleDecades(position, usedDecades, pickedIds);
-  if (decades.length === 0) return null;
-  const decade = decades[Math.floor(rand() * decades.length)];
-  return { decade, players: availablePlayers(position, decade, pickedIds) };
+  size: number = HAND_SIZE,
+): Player[] {
+  const pool = positionPool(position, pickedIds);
+  for (let i = pool.length - 1; i > 0; i--) {
+    const j = Math.floor(rand() * (i + 1));
+    [pool[i], pool[j]] = [pool[j], pool[i]];
+  }
+  return pool.slice(0, Math.min(size, pool.length)).sort((a, b) => b.ovr - a.ovr);
 }
