@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { POSITIONS, POSITION_NAMES, type Pick } from '@/lib/game';
+import { POSITIONS, type Pick } from '@/lib/game';
 import { TEAM_NAMES } from '@/lib/players';
 import type { SeasonResult } from '@/lib/sim';
 
@@ -44,7 +44,10 @@ export default function ResultScreen({ picks, result, onReplay }: Props) {
   const shareText =
     `I went ${result.wins}-${result.losses} in 162-0 — ${result.verdict.title}!\n` +
     picks
-      .map((pk) => `${pk.position}: ${pk.player.name} (${pk.player.team} ${pk.player.decade})`)
+      .map(
+        (pk) =>
+          `${pk.position}: ${pk.player.name} (${pk.player.decade} ${TEAM_NAMES[pk.player.team]?.split(' ').pop()})`,
+      )
       .join('\n') +
     `\nBuild your perfect season at 162-0.`;
 
@@ -80,8 +83,7 @@ export default function ResultScreen({ picks, result, onReplay }: Props) {
         </div>
         <p className="mx-auto mt-3 max-w-md text-sm text-chalk/60">{result.verdict.blurb}</p>
         <p className="mt-1 text-xs text-chalk/35">
-          Roster rating {result.avgOvr.toFixed(1)} · {(result.winPct * 100).toFixed(0)}% per-game win
-          chance
+          {(result.winPct * 100).toFixed(0)}% per-game win chance
         </p>
       </div>
 
@@ -95,13 +97,12 @@ export default function ResultScreen({ picks, result, onReplay }: Props) {
             return (
               <div key={pos} className="flex items-center gap-3 px-4 py-2 text-sm">
                 <span className="w-7 shrink-0 text-xs font-black text-seam">{pos}</span>
-                <span className="flex-1 font-semibold">{pk.player.name}</span>
-                <span className="hidden text-xs text-chalk/45 sm:inline">{POSITION_NAMES[pos]}</span>
-                <span className="text-xs text-chalk/55">
+                <span className="min-w-0 flex-1 truncate font-semibold">{pk.player.name}</span>
+                <span className="hidden text-xs text-chalk/45 sm:inline">
                   {TEAM_NAMES[pk.player.team]?.split(' ').pop()} · {pk.player.decade}
                 </span>
-                <span className="w-8 text-right text-xs font-bold tabular-nums text-grass">
-                  {pk.player.ovr}
+                <span className="shrink-0 font-mono text-xs tabular-nums text-chalk/55">
+                  {pk.player.stat}
                 </span>
               </div>
             );

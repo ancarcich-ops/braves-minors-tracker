@@ -1,19 +1,42 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
+import { DECADES } from '@/lib/game';
+import { TEAM_NAMES, type Decade } from '@/lib/players';
+
+const TEAM_POOL = Object.values(TEAM_NAMES);
 
 interface Props {
   /** Bumped each time a spin starts. */
   spinKey: number;
-  /** Franchise display names to flicker through while spinning. */
-  pool: string[];
-  /** The franchise name the reel settles on. */
-  target: string | null;
+  /** Team + decade the reels settle on, or null when idle. */
+  target: { team: string; decade: Decade } | null;
   onSettle: () => void;
 }
 
-export default function SlotMachine({ spinKey, pool, target, onSettle }: Props) {
-  const [label, setLabel] = useState('—');
+function Reel({ label, value, spinning }: { label: string; value: string; spinning: boolean }) {
+  return (
+    <div className="flex-1">
+      <div className="mb-1 text-center text-[10px] font-bold uppercase tracking-[0.2em] text-chalk/40">
+        {label}
+      </div>
+      <div className="relative flex h-16 items-center justify-center overflow-hidden rounded-lg border border-chalk/15 bg-night/60 px-2 text-center shadow-inner">
+        <span
+          className={[
+            'text-sm font-bold leading-tight',
+            spinning ? 'blur-[1px] opacity-70' : 'animate-pop',
+          ].join(' ')}
+        >
+          {value}
+        </span>
+      </div>
+    </div>
+  );
+}
+
+export default function SlotMachine({ spinKey, target, onSettle }: Props) {
+  const [team, setTeam] = useState('—');
+  const [decade, setDecade] = useState('—');
   const [spinning, setSpinning] = useState(false);
   const settledRef = useRef(false);
 
@@ -23,12 +46,14 @@ export default function SlotMachine({ spinKey, pool, target, onSettle }: Props) 
     setSpinning(true);
 
     const cycle = setInterval(() => {
-      setLabel(pool[Math.floor(Math.random() * pool.length)] ?? '—');
+      setTeam(TEAM_POOL[Math.floor(Math.random() * TEAM_POOL.length)]);
+      setDecade(DECADES[Math.floor(Math.random() * DECADES.length)]);
     }, 65);
 
     const stop = setTimeout(() => {
       clearInterval(cycle);
-      setLabel(target);
+      setTeam(TEAM_NAMES[target.team] ?? target.team);
+      setDecade(target.decade);
       setSpinning(false);
       if (!settledRef.current) {
         settledRef.current = true;
@@ -44,20 +69,10 @@ export default function SlotMachine({ spinKey, pool, target, onSettle }: Props) 
   }, [spinKey]);
 
   return (
-    <div>
-      <div className="mb-1 text-center text-[10px] font-bold uppercase tracking-[0.25em] text-chalk/40">
-        On the clock
-      </div>
-      <div className="relative flex h-20 items-center justify-center overflow-hidden rounded-xl border border-chalk/15 bg-night/60 px-3 shadow-inner">
-        <span
-          className={[
-            'text-center text-2xl font-black leading-tight',
-            spinning ? 'blur-[1.5px] opacity-70' : 'animate-pop text-seam',
-          ].join(' ')}
-        >
-          {label}
-        </span>
-      </div>
+    <div className="flex items-stretch gap-3">
+      <Reel label="Franchise" value={team} spinning={spinning} />
+      <div className="flex items-end pb-5 text-2xl font-black text-seam">×</div>
+      <Reel label="Era" value={decade} spinning={spinning} />
     </div>
   );
 }
